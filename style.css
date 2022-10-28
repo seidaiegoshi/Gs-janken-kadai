@@ -1,0 +1,84 @@
+    * {
+        padding: 0;
+        margin: 0;
+    }
+
+    #myCanvas {
+        background: #eee;
+        display: block;
+        margin: 0px auto;
+    }
+
+    .gamePad {
+        display: flex;
+        justify-content: center;
+        margin: 10px;
+    }
+
+    .gamePad .sideBarLeft,
+    .sideBarRight {
+        width: 15%;
+        display: flex;
+        /* justify-content: center; */
+        /* align-content: center; */
+        flex-direction: column;
+    }
+
+    .gamePad .sideBarLeft .gameHelp {
+        height: 50%;
+        margin: 0 5px;
+    }
+
+    .gamePad .sideBarLeft .myLife {
+        height: 50%;
+        margin: 0 5px;
+    }
+
+    .gamePad .sideBarRight .enemyImage {
+        height: 50%;
+        margin: 0 5px;
+
+    }
+
+    .gamePad .sideBarRight .enemyText {
+        height: 50%;
+        margin: 0 5px;
+    }
+
+    .stageSelect {
+        width: 100%;
+        /* margin: 0 auto; */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+    }
+
+    .stages {
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        /* flex-direction: column; */
+    }
+
+    .stages>div {
+        width: 30%
+    }
+
+
+
+    .canvasBottom {
+        width: 100%;
+        /* display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column; */
+
+    }
+
+    .Timer {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+    }
