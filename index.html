@@ -51,7 +51,7 @@
                     <button id="stage2">戦う</button>
                 </div>
                 <div class="stage3">
-                    <p>3.純粋な子供</p>
+                    <p>3.千手観音</p>
                     <button id="stage3">戦う</button>
                 </div>
             </div>
@@ -101,18 +101,23 @@
 
         const maxSpawn = 50;//手の最大出現数
         enemyHandsMaster = {
-            handGu: new Image(),
-            handCho: new Image(),
-            handPar: new Image(),
-            handToumei: new Image(),
             handNum: 20,
             handSpeed: 0.5,
             spawnHand: Array(maxSpawn),
         }
-        enemyHandsMaster.handGu.src = "img/gu.png";
-        enemyHandsMaster.handCho.src = "img/cho.png";
-        enemyHandsMaster.handPar.src = "img/par.png";
-        enemyHandsMaster.handToumei.src = "img/transparence.png";
+
+        //敵の手の画像
+        handGuImg = new Image();
+        handChoImg = new Image();
+        handParImg = new Image();
+        handToumeiImg = new Image();
+
+        handGuImg.src = "img/gu.png";
+        handChoImg.src = "img/cho.png";
+        handParImg.src = "img/par.png";
+        handToumeiImg.src = "img/transparence.png";
+
+
 
 
         //キー入力の設定
@@ -206,11 +211,11 @@
 
             //自キャラの右下に自分の手アイコンを表示
             if (yourHand === 1) {
-                ctx.drawImage(enemyHandsMaster.handGu, me.x + marginHand, me.y + marginHand, sizeHand, sizeHand);
+                ctx.drawImage(handGuImg, me.x + marginHand, me.y + marginHand, sizeHand, sizeHand);
             } else if (yourHand === 2) {
-                ctx.drawImage(enemyHandsMaster.handCho, me.x + marginHand, me.y + marginHand, sizeHand, sizeHand);
+                ctx.drawImage(handChoImg, me.x + marginHand, me.y + marginHand, sizeHand, sizeHand);
             } else if (yourHand === 3) {
-                ctx.drawImage(enemyHandsMaster.handPar, me.x + marginHand, me.y + marginHand, sizeHand, sizeHand);
+                ctx.drawImage(handParImg, me.x + marginHand, me.y + marginHand, sizeHand, sizeHand);
             }
             //デバッグ用:現在位置表示
             // ctx.fillText(me.x + ", " + me.y, me.x, me.y);
@@ -326,13 +331,13 @@
 
                 //敵の手を表示
                 if (handObj.spawnHand[i][4] == 1) {
-                    ctx.drawImage(enemyHandsMaster.handGu, handObj.spawnHand[i][0], handObj.spawnHand[i][1]);
+                    ctx.drawImage(handGuImg, handObj.spawnHand[i][0], handObj.spawnHand[i][1]);
                 } else if (handObj.spawnHand[i][4] == 2) {
-                    ctx.drawImage(enemyHandsMaster.handCho, handObj.spawnHand[i][0], handObj.spawnHand[i][1]);
+                    ctx.drawImage(handChoImg, handObj.spawnHand[i][0], handObj.spawnHand[i][1]);
                 } else if (handObj.spawnHand[i][4] == 3) {
-                    ctx.drawImage(enemyHandsMaster.handPar, handObj.spawnHand[i][0], handObj.spawnHand[i][1]);
+                    ctx.drawImage(handParImg, handObj.spawnHand[i][0], handObj.spawnHand[i][1]);
                 } else if (handObj.spawnHand[i][4] == 4) {
-                    ctx.drawImage(enemyHandsMaster.handToumei, handObj.spawnHand[i][0], handObj.spawnHand[i][1]);
+                    ctx.drawImage(handToumeiImg, handObj.spawnHand[i][0], handObj.spawnHand[i][1]);
                 }
 
                 //デバッグ用:手の位置を表示
@@ -362,9 +367,9 @@
             ctx.textAlign = "center";
             ctx.fillText("自分の手を決定しよう", canvas.width / 2, 80);
 
-            ctx.drawImage(enemyHandsMaster.handGu, areaGuX, areaGuY);
-            ctx.drawImage(enemyHandsMaster.handCho, areaChoX, areaChoY);
-            ctx.drawImage(enemyHandsMaster.handPar, areaParX, (canvas.width / 2) + 100);
+            ctx.drawImage(handGuImg, areaGuX, areaGuY);
+            ctx.drawImage(handChoImg, areaChoX, areaChoY);
+            ctx.drawImage(handParImg, areaParX, (canvas.width / 2) + 100);
 
             if (distance(me.x, me.y, areaGuX, areaGuY) < 40) {
                 yourHand = 1;
@@ -392,15 +397,13 @@
             }
             if (gameReady) {
                 gameStart();
-                console.log(waveCount);
 
                 for (let i = 0; i < enemyHandsWaveNumMax - 1; i++) {//2wave目からなので1から。
                     setTimeout(() => {
                         if (gameReady) {
                             waveCount++;
-                            console.log(waveCount);
                         }
-                    }, (i + 1) * 10000);
+                    }, (i + 1) * 1000);
                 }
             }
 
@@ -424,34 +427,29 @@
             //meの移動:キー入力
             keyMove();
 
-            //敵の手を描画
-            // for (let i = 0; i < waveCount; i++) {
-            drawEnemyHands(stageEnemyHandsArray[waveCount]);
-            // console.log("wavecount" + waveCount)
-            // console.log("sp1" + stageEnemyHandsArray[waveCount].spawnHand[0][0])
-            // }
+            for (let j = 0; j < waveCount + 1; j++) {//現在のwave数まで回す
+                drawEnemyHands(stageEnemyHandsArray[j]); //敵の手を表示
+                for (let i = 0; i < stageEnemyHandsArray[j].handNum; i++) {//配列の手の数
+
+                    //  当たり判定
+                    if (distance(me.x, me.y, stageEnemyHandsArray[j].spawnHand[i][0], stageEnemyHandsArray[j].spawnHand[i][1]) < 40) {
+                        if (stageEnemyHandsArray[j].spawnHand[i][4] != 4) {//画像がとうめいじゃなかったら、未判定であれば
+                            //あたったら透明にする
+                            stageEnemyHandsArray[j].spawnHand[i][4] = 4;
+
+                            //じゃんけんの判定 してスコアリング
+                            if (jankenJudge(yourHand, stageEnemyHandsArray[j].spawnHand[i][4]) == "かち") {
+                                scoreWinCount++;
+                            } else if (jankenJudge(yourHand, stageEnemyHandsArray[j].spawnHand[i][4]) == "あいこ") {
+                                scoreDrawCount++;
+                            } else if (jankenJudge(yourHand, stageEnemyHandsArray[j].spawnHand[i][4]) == "まけ") {
+                                scoreLoseCount++;
+                            }
+                            displayScore();//スコアボードに表示
 
 
-            //当たり判定
-            for (let i = 0; i < stageEnemyHandsArray[waveCount].handNum; i++) {
 
-                //  MEとあたったら透明になる。
-                if (distance(me.x, me.y, stageEnemyHandsArray[waveCount].spawnHand[i][0], stageEnemyHandsArray[waveCount].spawnHand[i][1]) < 40) {
-                    if (stageEnemyHandsArray[waveCount].spawnHand[i][4] != 4) {//画像がとうめいじゃなかったら、未判定であれば
-
-                        //じゃんけんの判定 してスコアリング
-                        if (jankenJudge(yourHand, stageEnemyHandsArray[waveCount].spawnHand[i][4]) == "かち") {
-                            scoreWinCount++;
-                        } else if (jankenJudge(yourHand, stageEnemyHandsArray[waveCount].spawnHand[i][4]) == "あいこ") {
-                            scoreDrawCount++;
-                        } else if (jankenJudge(yourHand, stageEnemyHandsArray[waveCount].spawnHand[i][4]) == "まけ") {
-                            scoreLoseCount++;
                         }
-                        displayScore();
-
-                        //あたったら透明にする
-                        stageEnemyHandsArray[waveCount].spawnHand[i][4] = 4;
-
                     }
                 }
             }
@@ -468,12 +466,7 @@
                 // stageEnemyHandsArray[i] = Object.assign({}, enemyHandsMaster);
                 setEnemyHands(stageEnemyHandsArray[i]);//敵の手の初期化
 
-                //オブジェクトのコピーの関係上、ここで画像を設定する必要がある。
-
-
             };
-            console.log(stageEnemyHandsArray[0]);
-            console.log(stageEnemyHandsArray[1]);
             initGame();//スコア初期化
             drawingInterval = Array(enemyHandsWaveNumMax);
             myHandSelectStart();
