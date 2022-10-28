@@ -90,10 +90,17 @@
         let yourHandSelected = false;
         let gameReady = false;
         const areaReady = [canvas.width / 2, canvas.height / 2 - 50]
+        let onlyMeInterval;
 
         //敵の手の設定
+
+        let stageEnemyHandsArray;
+        let enemyHandsWaveNumMax;
+        let drawingInterval;
+        let waveCount; //現在のwave
+
         const maxSpawn = 50;//手の最大出現数
-        enemyHands = {
+        enemyHandsMaster = {
             handGu: new Image(),
             handCho: new Image(),
             handPar: new Image(),
@@ -102,10 +109,10 @@
             handSpeed: 0.5,
             spawnHand: Array(maxSpawn),
         }
-        enemyHands.handGu.src = "img/gu.png";
-        enemyHands.handCho.src = "img/cho.png";
-        enemyHands.handPar.src = "img/par.png";
-        enemyHands.handToumei.src = "img/transparence.png";
+        enemyHandsMaster.handGu.src = "img/gu.png";
+        enemyHandsMaster.handCho.src = "img/cho.png";
+        enemyHandsMaster.handPar.src = "img/par.png";
+        enemyHandsMaster.handToumei.src = "img/transparence.png";
 
 
         //キー入力の設定
@@ -199,11 +206,11 @@
 
             //自キャラの右下に自分の手アイコンを表示
             if (yourHand === 1) {
-                ctx.drawImage(enemyHands.handGu, me.x + marginHand, me.y + marginHand, sizeHand, sizeHand);
+                ctx.drawImage(enemyHandsMaster.handGu, me.x + marginHand, me.y + marginHand, sizeHand, sizeHand);
             } else if (yourHand === 2) {
-                ctx.drawImage(enemyHands.handCho, me.x + marginHand, me.y + marginHand, sizeHand, sizeHand);
+                ctx.drawImage(enemyHandsMaster.handCho, me.x + marginHand, me.y + marginHand, sizeHand, sizeHand);
             } else if (yourHand === 3) {
-                ctx.drawImage(enemyHands.handPar, me.x + marginHand, me.y + marginHand, sizeHand, sizeHand);
+                ctx.drawImage(enemyHandsMaster.handPar, me.x + marginHand, me.y + marginHand, sizeHand, sizeHand);
             }
             //デバッグ用:現在位置表示
             // ctx.fillText(me.x + ", " + me.y, me.x, me.y);
@@ -319,13 +326,13 @@
 
                 //敵の手を表示
                 if (handObj.spawnHand[i][4] == 1) {
-                    ctx.drawImage(handObj.handGu, handObj.spawnHand[i][0], handObj.spawnHand[i][1]);
+                    ctx.drawImage(enemyHandsMaster.handGu, handObj.spawnHand[i][0], handObj.spawnHand[i][1]);
                 } else if (handObj.spawnHand[i][4] == 2) {
-                    ctx.drawImage(handObj.handCho, handObj.spawnHand[i][0], handObj.spawnHand[i][1]);
+                    ctx.drawImage(enemyHandsMaster.handCho, handObj.spawnHand[i][0], handObj.spawnHand[i][1]);
                 } else if (handObj.spawnHand[i][4] == 3) {
-                    ctx.drawImage(handObj.handPar, handObj.spawnHand[i][0], handObj.spawnHand[i][1]);
+                    ctx.drawImage(enemyHandsMaster.handPar, handObj.spawnHand[i][0], handObj.spawnHand[i][1]);
                 } else if (handObj.spawnHand[i][4] == 4) {
-                    ctx.drawImage(handObj.handToumei, handObj.spawnHand[i][0], handObj.spawnHand[i][1]);
+                    ctx.drawImage(enemyHandsMaster.handToumei, handObj.spawnHand[i][0], handObj.spawnHand[i][1]);
                 }
 
                 //デバッグ用:手の位置を表示
@@ -338,7 +345,7 @@
 
 
         //手札選択画面
-        function drawOnlyMe() {
+        function drawSelectHandMenu() {
             const areaGuX = (canvas.width / 4) - 25;
             const areaGuY = (canvas.height / 2) + 100;
             const areaChoX = (canvas.width * 2 / 4) - 25;
@@ -355,9 +362,9 @@
             ctx.textAlign = "center";
             ctx.fillText("自分の手を決定しよう", canvas.width / 2, 80);
 
-            ctx.drawImage(enemyHands.handGu, areaGuX, areaGuY);
-            ctx.drawImage(enemyHands.handCho, areaChoX, areaChoY);
-            ctx.drawImage(enemyHands.handPar, areaParX, (canvas.width / 2) + 100);
+            ctx.drawImage(enemyHandsMaster.handGu, areaGuX, areaGuY);
+            ctx.drawImage(enemyHandsMaster.handCho, areaChoX, areaChoY);
+            ctx.drawImage(enemyHandsMaster.handPar, areaParX, (canvas.width / 2) + 100);
 
             if (distance(me.x, me.y, areaGuX, areaGuY) < 40) {
                 yourHand = 1;
@@ -385,6 +392,16 @@
             }
             if (gameReady) {
                 gameStart();
+                console.log(waveCount);
+
+                for (let i = 0; i < enemyHandsWaveNumMax - 1; i++) {//2wave目からなので1から。
+                    setTimeout(() => {
+                        if (gameReady) {
+                            waveCount++;
+                            console.log(waveCount);
+                        }
+                    }, (i + 1) * 10000);
+                }
             }
 
             //meの移動
@@ -404,62 +421,86 @@
             //自分を描画
             drawMe();
 
-            //敵の手を描画
-            drawEnemyHands(enemyHands);
-
             //meの移動:キー入力
             keyMove();
 
+            //敵の手を描画
+            // for (let i = 0; i < waveCount; i++) {
+            drawEnemyHands(stageEnemyHandsArray[waveCount]);
+            // console.log("wavecount" + waveCount)
+            // console.log("sp1" + stageEnemyHandsArray[waveCount].spawnHand[0][0])
+            // }
+
+
             //当たり判定
-            for (let i = 0; i < enemyHands.handNum; i++) {
+            for (let i = 0; i < stageEnemyHandsArray[waveCount].handNum; i++) {
 
                 //  MEとあたったら透明になる。
-                if (distance(me.x, me.y, enemyHands.spawnHand[i][0], enemyHands.spawnHand[i][1]) < 40) {
-                    if (enemyHands.spawnHand[i][4] != 4) {//画像がとうめいじゃなかったら、未判定であれば
+                if (distance(me.x, me.y, stageEnemyHandsArray[waveCount].spawnHand[i][0], stageEnemyHandsArray[waveCount].spawnHand[i][1]) < 40) {
+                    if (stageEnemyHandsArray[waveCount].spawnHand[i][4] != 4) {//画像がとうめいじゃなかったら、未判定であれば
 
                         //じゃんけんの判定 してスコアリング
-                        if (jankenJudge(yourHand, enemyHands.spawnHand[i][4]) == "かち") {
+                        if (jankenJudge(yourHand, stageEnemyHandsArray[waveCount].spawnHand[i][4]) == "かち") {
                             scoreWinCount++;
-                        } else if (jankenJudge(yourHand, enemyHands.spawnHand[i][4]) == "あいこ") {
+                        } else if (jankenJudge(yourHand, stageEnemyHandsArray[waveCount].spawnHand[i][4]) == "あいこ") {
                             scoreDrawCount++;
-                        } else if (jankenJudge(yourHand, enemyHands.spawnHand[i][4]) == "まけ") {
+                        } else if (jankenJudge(yourHand, stageEnemyHandsArray[waveCount].spawnHand[i][4]) == "まけ") {
                             scoreLoseCount++;
                         }
                         displayScore();
 
                         //あたったら透明にする
-                        enemyHands.spawnHand[i][4] = 4;
+                        stageEnemyHandsArray[waveCount].spawnHand[i][4] = 4;
 
                     }
                 }
             }
         }
 
-
         //ステージ選択ボタンを押すと、敵を準備
-        let onlyMeInterval;
         $("#stage1").on("click", function () {
-            setEnemyHands(enemyHands);//敵の手の初期化
+            enemyHandsWaveNumMax = 2;
+            stageEnemyHandsArray = Array(enemyHandsWaveNumMax);
+            for (let i = 0; i < enemyHandsWaveNumMax; i++) {
+
+                stageEnemyHandsArray[i] = JSON.parse(JSON.stringify(enemyHandsMaster));
+                //imageはコピーされておらず、enemyHandsMasterのを使い回しているので、enemyHandsMasterオブジェクトからImageに関するものを取り除いたほうが良さそう・・
+                // stageEnemyHandsArray[i] = Object.assign({}, enemyHandsMaster);
+                setEnemyHands(stageEnemyHandsArray[i]);//敵の手の初期化
+
+                //オブジェクトのコピーの関係上、ここで画像を設定する必要がある。
+
+
+            };
+            console.log(stageEnemyHandsArray[0]);
+            console.log(stageEnemyHandsArray[1]);
             initGame();//スコア初期化
-            if (!onlyMeInterval) {
-                onlyMeInterval = setInterval(drawOnlyMe, 10);//最初は自キャラだけ動かせる
-            } else {
-                clearInterval(onlyMeInterval);//自分だけ描画を止め
-                onlyMeInterval = setInterval(drawOnlyMe, 10);
-            }
+            drawingInterval = Array(enemyHandsWaveNumMax);
+            myHandSelectStart();
         })
 
-        let drawingInterval;
+        function myHandSelectStart() {
+            waveCount = 0;
+            if (!onlyMeInterval) {
+                onlyMeInterval = setInterval(drawSelectHandMenu, 10);//最初は自キャラだけ動かせる
+            } else {
+                clearInterval(onlyMeInterval);//自分だけ描画を止め
+                onlyMeInterval = setInterval(drawSelectHandMenu, 10);
+            }
+        }
+
+
+
         function gameStart() {
             clearInterval(onlyMeInterval);//自分だけ描画を止め
 
-            if (!drawingInterval) {
+            if (!drawingInterval[waveCount]) {
                 clearInterval(onlyMeInterval);
-                drawingInterval = setInterval(draw, 10);
+                drawingInterval[waveCount] = setInterval(draw, 10);
             } else {
-                clearInterval(drawingInterval);
+                clearInterval(drawingInterval[waveCount]);
                 clearInterval(onlyMeInterval);
-                drawingInterval = setInterval(draw, 10);
+                drawingInterval[waveCount] = setInterval(draw, 10);
             }
 
         }
