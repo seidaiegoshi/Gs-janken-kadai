@@ -47,32 +47,34 @@
 
     .stageSelect {
         width: 100%;
-        /* margin: 0 auto; */
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .stages {
+        width: 100%;
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+    }
+
+    .stages>div {
+        width: 30%;
         display: flex;
         justify-content: center;
         align-items: center;
         flex-direction: column;
-    }
 
-    .stages {
-        display: flex;
-        justify-content: space-around;
-        align-items: center;
-        /* flex-direction: column; */
-    }
-
-    .stages>div {
-        width: 30%
     }
 
 
 
     .canvasBottom {
-        width: 100%;
-        /* display: flex;
+        display: flex;
         justify-content: center;
         align-items: center;
-        flex-direction: column; */
+        flex-direction: column;
 
     }
 
