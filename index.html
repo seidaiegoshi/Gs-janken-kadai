@@ -117,9 +117,6 @@
         handParImg.src = "img/par.png";
         handToumeiImg.src = "img/transparence.png";
 
-
-
-
         //キー入力の設定
         let keyRightPressed = false;
         let keyLeftPressed = false;
@@ -434,8 +431,6 @@
                     //  当たり判定
                     if (distance(me.x, me.y, stageEnemyHandsArray[j].spawnHand[i][0], stageEnemyHandsArray[j].spawnHand[i][1]) < 40) {
                         if (stageEnemyHandsArray[j].spawnHand[i][4] != 4) {//画像がとうめいじゃなかったら、未判定であれば
-                            //あたったら透明にする
-                            stageEnemyHandsArray[j].spawnHand[i][4] = 4;
 
                             //じゃんけんの判定 してスコアリング
                             if (jankenJudge(yourHand, stageEnemyHandsArray[j].spawnHand[i][4]) == "かち") {
@@ -447,7 +442,8 @@
                             }
                             displayScore();//スコアボードに表示
 
-
+                            //あたったら透明にする
+                            stageEnemyHandsArray[j].spawnHand[i][4] = 4;
 
                         }
                     }
@@ -460,16 +456,14 @@
             enemyHandsWaveNumMax = 2;
             stageEnemyHandsArray = Array(enemyHandsWaveNumMax);
             for (let i = 0; i < enemyHandsWaveNumMax; i++) {
-
-                stageEnemyHandsArray[i] = JSON.parse(JSON.stringify(enemyHandsMaster));
-                //imageはコピーされておらず、enemyHandsMasterのを使い回しているので、enemyHandsMasterオブジェクトからImageに関するものを取り除いたほうが良さそう・・
-                // stageEnemyHandsArray[i] = Object.assign({}, enemyHandsMaster);
+                stageEnemyHandsArray[i] = JSON.parse(JSON.stringify(enemyHandsMaster));//オブジェクトのディープコピーしてくれるらしい。(同じ参照元ではない)
                 setEnemyHands(stageEnemyHandsArray[i]);//敵の手の初期化
-
             };
+
+            //初期化処理
             initGame();//スコア初期化
-            drawingInterval = Array(enemyHandsWaveNumMax);
-            myHandSelectStart();
+
+            myHandSelectStart();//手札選択画面を表示する
         })
 
         function myHandSelectStart() {
@@ -487,13 +481,13 @@
         function gameStart() {
             clearInterval(onlyMeInterval);//自分だけ描画を止め
 
-            if (!drawingInterval[waveCount]) {
+            if (!drawingInterval) {
                 clearInterval(onlyMeInterval);
-                drawingInterval[waveCount] = setInterval(draw, 10);
+                drawingInterval = setInterval(draw, 10);
             } else {
-                clearInterval(drawingInterval[waveCount]);
+                clearInterval(drawingInterval);
                 clearInterval(onlyMeInterval);
-                drawingInterval[waveCount] = setInterval(draw, 10);
+                drawingInterval = setInterval(draw, 10);
             }
 
         }
