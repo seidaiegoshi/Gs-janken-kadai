@@ -141,13 +141,28 @@
         }
 
         function initGame() {
+            //スコアを初期化
             scoreWinCount = 0;
             scoreDrawCount = 0;
             scoreLoseCount = 0;
             yourHand = 0;
+            displayScore();
+
+            //meを初期位置へ
+            me.x = (canvas.width / 2) - 25;
+            me.y = (canvas.height) - 100;
+
+            //ゲーム開始パラメータを初期化
             yourHandSelected = false;
             gameReady = false;
-            displayScore();
+
+            //描画処理を初期化
+            if (onlyMeInterval) {
+                clearInterval(onlyMeInterval);//自分だけ描画を止め
+            }
+            if (drawingInterval) {
+                clearInterval(drawingInterval);
+            }
         }
 
         //キーを押したときの処理
@@ -454,18 +469,21 @@
 
         //ボタン押下時ステージ設定処理、描画開始。
         $("#stage1").on("click", function () {
+
+            //初期化処理
+            initGame();//スコア、描画を初期化
+
+            //ステージの設定
             enemyHandsWaveNumMax = 5;
             stageEnemyHandsArray = Array(enemyHandsWaveNumMax);
             for (let i = 0; i < enemyHandsWaveNumMax; i++) {
                 stageEnemyHandsArray[i] = JSON.parse(JSON.stringify(enemyHandsMaster));//オブジェクトのディープコピーしてくれるらしい。(同じ参照元ではない)
                 setEnemyHands(stageEnemyHandsArray[i]);//敵の手の初期化
             };
-
-            //初期化処理
-            initGame();//スコア初期化
-
-            myHandSelectStart();//手札選択画面を表示する
             waveDelay = 5000;//msec
+
+            //描画開始
+            myHandSelectStart();//手札選択画面を表示する
         })
 
         function myHandSelectStart() {
@@ -477,7 +495,6 @@
                 onlyMeInterval = setInterval(drawSelectHandMenu, 10);
             }
         }
-
 
 
         function gameStart() {
