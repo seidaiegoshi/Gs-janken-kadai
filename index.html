@@ -217,7 +217,6 @@
         function drawMe() {//自分の位置を表示する。
             const marginHand = 25;
             const sizeHand = 25;
-
             //自キャラを表示
             ctx.drawImage(me.img, me.x, me.y);
 
@@ -377,6 +376,7 @@
             //自分の手札を決定する。
             ctx.font = "20px serif";
             ctx.textAlign = "center";
+            ctx.fillStyle = "black";
             ctx.fillText("自分の手を決定しよう", canvas.width / 2, 80);
 
             ctx.drawImage(handGuImg, areaGuX, areaGuY);
@@ -398,13 +398,17 @@
             //開始合図の円
             ctx.beginPath();
             ctx.arc(areaReady[0], areaReady[1], 50, 0, Math.PI * 2, true);
-            ctx.strokeStyle = 'deepskyblue';
+            ctx.fillStyle = "rgba(210,227,73,0.7)";
+            // ctx.strokeStyle = 'red';
             ctx.lineWidth = 5;
-            ctx.stroke();
+            // ctx.stroke();
+            ctx.fill();
+            ctx.closePath();
 
             ctx.textAlign = "center";
+            ctx.fillStyle = "black";
             ctx.fillText("開始", areaReady[0], areaReady[1]);
-            if (yourHandSelected == true && distance(me.x, me.y, areaReady[0], areaReady[1]) < 40) {
+            if (yourHandSelected == true && distance(me.x + (me.size / 2), me.y + (me.size / 2), areaReady[0], areaReady[1]) < 50) {//meの位置は画像の左上にある。
                 gameReady = true;
             }
             if (gameReady) {
@@ -439,7 +443,6 @@
             //meの移動:キー入力
             keyMove();
 
-            console.log(waveCount);
             for (let j = 0; j < waveCount + 1; j++) {//現在のwave数まで回す
                 drawEnemyHands(stageEnemyHandsArray[j]); //敵の手を表示
                 for (let i = 0; i < stageEnemyHandsArray[j].handNum; i++) {//配列の手の数
