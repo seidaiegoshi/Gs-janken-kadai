@@ -3,11 +3,15 @@
         margin: 0;
     }
 
+
+    /* キャンバス */
+
     #myCanvas {
         background: #eee;
         display: block;
         margin: 0px auto;
     }
+
 
     .gamePad {
         display: flex;
@@ -19,32 +23,93 @@
     .sideBarRight {
         width: 15%;
         display: flex;
-        /* justify-content: center; */
-        /* align-content: center; */
         flex-direction: column;
     }
 
-    .gamePad .sideBarLeft .gameHelp {
+    /* 両サイド */
+    /* 左上 */
+    .gameHelp {
+        background-color: black;
         height: 50%;
-        margin: 0 5px;
+
+        display: flex;
+        justify-content: space-evenly;
+        align-items: center;
+        flex-direction: column;
+        border: rgb(10, 255, 255) 5px ridge;
     }
 
-    .gamePad .sideBarLeft .myLife {
-        height: 50%;
-        margin: 0 5px;
+    .gameHelp p {
+        font-weight: bold;
     }
 
-    .gamePad .sideBarRight .enemyImage {
-        height: 50%;
-        margin: 0 5px;
-
+    .exp {
+        text-align: left;
+        color: white;
+        width: 80%;
     }
 
-    .gamePad .sideBarRight .enemyText {
-        height: 50%;
-        margin: 0 5px;
+    .howtoplay {
+        color: orange;
+        font-size: 20px;
+        font-weight: bold;
     }
 
+    /* 左下 */
+    .myInfo {
+        background-color: black;
+        height: 50%;
+
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+
+        color: white;
+        border: lightgreen 5px ridge;
+    }
+
+    .myInfo>div {
+        width: 80%;
+    }
+
+    #howToWin {
+        font-weight: bold;
+    }
+
+    #score {
+        font-weight: bold;
+    }
+
+
+    /* 右上 */
+    #enemyImage {
+        height: 50%;
+    }
+
+
+    /* 右下 */
+
+    .enemyMessageArea {
+        background-color: black;
+        background-size: contain;
+        background-repeat: no-repeat;
+        background-position: center;
+        height: 50%;
+
+        display: flex;
+        justify-content: center;
+        align-items: center;
+
+        border: lightcyan 5px ridge;
+    }
+
+    .enemyMessageArea>div {
+        color: white;
+        width: 80%;
+    }
+
+    /* ステージセレクト */
     .stageSelect {
         width: 100%;
         display: flex;
@@ -76,11 +141,4 @@
         align-items: center;
         flex-direction: column;
 
-    }
-
-    .Timer {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        flex-direction: column;
     }
