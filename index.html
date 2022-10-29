@@ -90,28 +90,28 @@
         let yourHandSelected = false;
         let gameReady = false;
         const areaReady = [canvas.width / 2, canvas.height / 2 - 50]
+
+        //ステージ設定
+        let enemyHandsWaveNumMax;
+        let waveCount; //現在のwave
+        let waveDelay;//ウェーブの間隔
+
+        //描画設定
         let onlyMeInterval;
+        let drawingInterval;
 
         //敵の手の設定
-
         let stageEnemyHandsArray;
-        let enemyHandsWaveNumMax;
-        let drawingInterval;
-        let waveCount; //現在のwave
-
         const maxSpawn = 50;//手の最大出現数
         enemyHandsMaster = {
             handNum: 20,
             handSpeed: 0.5,
             spawnHand: Array(maxSpawn),
         }
-
-        //敵の手の画像
         handGuImg = new Image();
         handChoImg = new Image();
         handParImg = new Image();
         handToumeiImg = new Image();
-
         handGuImg.src = "img/gu.png";
         handChoImg.src = "img/cho.png";
         handParImg.src = "img/par.png";
@@ -400,7 +400,7 @@
                         if (gameReady) {
                             waveCount++;
                         }
-                    }, (i + 1) * 1000);
+                    }, (i + 1) * waveDelay);
                 }
             }
 
@@ -424,6 +424,7 @@
             //meの移動:キー入力
             keyMove();
 
+            console.log(waveCount);
             for (let j = 0; j < waveCount + 1; j++) {//現在のwave数まで回す
                 drawEnemyHands(stageEnemyHandsArray[j]); //敵の手を表示
                 for (let i = 0; i < stageEnemyHandsArray[j].handNum; i++) {//配列の手の数
@@ -451,9 +452,9 @@
             }
         }
 
-        //ステージ選択ボタンを押すと、敵を準備
+        //ボタン押下時ステージ設定処理、描画開始。
         $("#stage1").on("click", function () {
-            enemyHandsWaveNumMax = 2;
+            enemyHandsWaveNumMax = 5;
             stageEnemyHandsArray = Array(enemyHandsWaveNumMax);
             for (let i = 0; i < enemyHandsWaveNumMax; i++) {
                 stageEnemyHandsArray[i] = JSON.parse(JSON.stringify(enemyHandsMaster));//オブジェクトのディープコピーしてくれるらしい。(同じ参照元ではない)
@@ -464,6 +465,7 @@
             initGame();//スコア初期化
 
             myHandSelectStart();//手札選択画面を表示する
+            waveDelay = 5000;//msec
         })
 
         function myHandSelectStart() {
