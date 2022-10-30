@@ -23,16 +23,20 @@
             </div>
             <div class="myInfo">
                 <div id="howToWin"></div>
+                <div><span id="win"></span>
+                    <span id="ifwin"></span>
+                </div>
+                <div><span id="draw"></span><span id="ifdraw"></span></div>
+                <div><span id="lose"></span><span id="iflose"></span></div>
+
                 <div class="result">
-                    <div id="win"></div>
-                    <div id="draw"></div>
-                    <div id="lose"></div>
                     <div id="score"></div>
                 </div>
             </div>
         </div>
         <div class="CenterCanvas">
-            <canvas id="myCanvas" width="500" height="500"></canvas>
+            <canvas id="myCanvas" width="500" height="500">
+            </canvas>
         </div>
         <div class="sideBarRight">
             <div id="enemyImage">
@@ -49,7 +53,7 @@
         <div class="stageSelect">
             <div class="stages">
                 <div class="stage1">
-                    <p>1.じゃんけん好き</p>
+                    <p>1.じゃんけん好きなゴリラ</p>
                     <button id="stage1">戦う</button>
                 </div>
                 <div class="stage2">
@@ -137,13 +141,12 @@
         let scoreWinCount = 0;
         let scoreDrawCount = 0;
         let scoreLoseCount = 0;
+        let resultScore
 
         function displayScore() {
-            $("#win").text("win: " + scoreWinCount);
-            $("#draw").text("draw: " + scoreDrawCount);
-            $("#lose").text("lose: " + scoreLoseCount);
+            resultScore = scoreWinCount - scoreLoseCount;
 
-            $("#score").text("Score: " + (scoreWinCount - scoreLoseCount));
+            $("#score").text("Score: " + (resultScore));
         }
 
         function initGame() {
@@ -151,6 +154,7 @@
             scoreWinCount = 0;
             scoreDrawCount = 0;
             scoreLoseCount = 0;
+            resultScore = 0
             yourHand = 0;
             displayScore();
 
@@ -502,25 +506,34 @@
         }
 
 
+        //プレイ中のテキスト表示
         function stagePlayingMessage() {
             if (stageNumber === 1) {
-                $("#enemyMessageText").html("地元じゃ無敗の<br>「じゃん拳」<br>受けよ！<br>ｳﾗｳﾗｳﾗｳﾗｳﾗｧ！");
-                if (scoreWinCount - scoreLoseCount > 5) {
-                    $("#enemyMessageText").html("まだだ！まだ負けていない！");
-                } else if (scoreWinCount - scoreLoseCount > 10) {
-                    $("#enemyMessageText").html("おかっちゃんに言いつけてやる！");
+                $("#enemyMessageText").text("ゴリラのほうが人間より知能が高いということを証明してみせましょう。");
+                $("#enemyImage").children("img").attr("src", "./img/gorira_oko.png");
+                if (5 <= resultScore && resultScore < 10) {
+                    $("#enemyMessageText").text("なかなかやるようですね。");
+                } else if (resultScore >= 10) {
+                    $("#enemyMessageText").text("それ以上は動物虐待になりますよ？");
                 }
             }
         }
+
+        //ステージ終了時のテキスト表示
         function stageEndMessage() {
             //終了時会話フェーズ
-
             if (stageNumber === 1) {
                 if (scoreWinCount - scoreLoseCount < 5) {
-                    $("#enemyMessageText").html("ぐふふ。僕の勝ちだね。");
+                    $("#enemyMessageText").text("私の勝ちですね。ゴリラになりたいなら私の研修室へきなさい。");
+                    $("#enemyImage").children("img").attr("src", "./img/gorira.png");
+                    $("#stage1").text("再挑戦");
+
                 } else {
-                    $("#enemyMessageText").html("くっ<br>ドラ先輩！こいつ、やっちゃってください！<br>あっ違った。「助けて~ド○えも~ん」");
+                    $("#enemyMessageText").text("ゴリラが人間に劣る・・？。最新の猫型ロボットにあとは任せます・・・");
+                    $("#enemyImage").children("img").attr("src", "./img/gorira_lose.png");
+                    $(".stage2").css("visibility", "visible")
                 }
+
             }
         }
 
@@ -543,9 +556,16 @@
             waveDelay = 4000;//msec 1000ぐらいが怪しいライン(小さいとバグる)
 
             //開始前会話フェーズ
-            $("#howToWin").html("スコア5以上でクリア！");
-            $("#enemyMessageText").html("僕、じゃんけん大好き。<br>じゃんけん、しよう。");
-            $("#enemyImage").children("img").attr("src", "./img/boy.jpeg");
+            $("#howToWin").html("合計スコア5以上でクリア！");
+            $("#win").text("win: ");
+            $("#ifwin").text("+1");
+            $("#draw").text("draw: ");
+            $("#ifdraw").text("0");
+            $("#lose").text("lose: ");
+            $("#iflose").text("-1");
+
+            $("#enemyMessageText").html("人間ごときが私に勝負を挑もうとはいい度胸ですね。");
+            $("#enemyImage").children("img").attr("src", "./img/gorira.png");
 
             //描画開始
             myHandSelectStart();//手札選択画面を表示する
