@@ -15,7 +15,7 @@
             <div class="gameHelp">
                 <div class="howtoplay">HOW TO PLAY</div>
                 <div class="exp">
-                    <p>じゃんけんに勝て！</p>
+                    <p><b>とにかくじゃんけんに勝て！</b></p>
                     <p>ステージを選択して開始！</p>
                     <p>矢印キーで移動</p>
                 </div>
@@ -87,8 +87,8 @@
         //自分の情報
         const me = {
             img: new Image(),
-            x: (canvas.width / 2) - 25,
-            y: (canvas.height) - 100,
+            x: (canvas.width / 2),
+            y: (canvas.height / 2),
             size: 50,
             collision: 15,
             hand: 0,//0:gu, 1:cho, 2:par
@@ -159,8 +159,8 @@
             displayScore();
 
             //meを初期位置へ
-            me.x = (canvas.width / 2) - 25;
-            me.y = (canvas.height) - 100;
+            me.x = (canvas.width / 2);
+            me.y = (canvas.height) - 50;
 
             //ゲーム開始パラメータを初期化
             yourHandSelected = false;
@@ -227,18 +227,17 @@
         }
 
         function drawMe() {//自分の位置を表示する。
-            const marginHand = 25;
             const sizeHand = 25;
             //自キャラを表示
-            ctx.drawImage(me.img, me.x, me.y);
+            ctx.drawImage(me.img, me.x - me.size / 2, me.y - me.size / 2);
 
             //自キャラの右下に自分の手アイコンを表示
             if (yourHand === 1) {
-                ctx.drawImage(handGuImg, me.x + marginHand, me.y + marginHand, sizeHand, sizeHand);
+                ctx.drawImage(handGuImg, me.x, me.y, sizeHand, sizeHand);
             } else if (yourHand === 2) {
-                ctx.drawImage(handChoImg, me.x + marginHand, me.y + marginHand, sizeHand, sizeHand);
+                ctx.drawImage(handChoImg, me.x, me.y, sizeHand, sizeHand);
             } else if (yourHand === 3) {
-                ctx.drawImage(handParImg, me.x + marginHand, me.y + marginHand, sizeHand, sizeHand);
+                ctx.drawImage(handParImg, me.x, me.y, sizeHand, sizeHand);
             }
             //デバッグ用:現在位置表示
             // ctx.fillText(me.x + ", " + me.y, me.x, me.y);
@@ -298,22 +297,27 @@
             }
         }
 
+        function setRandom(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min
+        }
         function initHandPoint() {//手の出現場所を決定する
-            const min = 0;
-            const max = canvas.width;//width ===height前提で書いてる
-            let pointX = Math.floor(Math.random() * (max - min + 1)) + min;
-            let pointY = Math.floor(Math.random() * (max - min + 1)) + min;
+            const wmin = 0;
+            const wmax = canvas.width;
+            const hmin = 0;
+            const hmax = canvas.height;
+            let pointX = setRandom(wmin, wmax);
+            let pointY = setRandom(hmin, hmax);
 
             //開始位置を画面外へおいやる
-            if (pointX < canvas.width / 2) {
-                pointX -= (canvas.width / 2) + me.size;
+            if (pointX < wmax / 2) {
+                pointX += wmax + me.size;
             } else {
-                pointX += (canvas.width / 2) - me.size;
+                pointX -= wmax + me.size;
             }
-            if (pointY < canvas.width / 2) {
-                pointY -= (canvas.width / 2) + me.size;
+            if (pointY < hmax / 2) {
+                pointY += hmax + me.size;
             } else {
-                pointY += (canvas.width / 2) - me.size;
+                pointY -= hmax + me.size;
             }
             return [pointX, pointY]
         }
@@ -328,7 +332,6 @@
             initHandArray(handObj);//一旦リセット
 
             let theta = 0;
-
             for (let i = 0; i < handObj.handNum; i++) {
                 //x,y座標
                 [handObj.spawnHand[i][0], handObj.spawnHand[i][1]] = initHandPoint();
@@ -346,6 +349,19 @@
             }
         }
 
+
+        function drawRotatedImage(image, x, y, angle) {
+            // コンテキストを保存する
+            ctx.save();
+            // 回転の中心に原点を移動する
+            ctx.translate(x, y);
+            // canvasを回転する
+            ctx.rotate(angle + (Math.PI / 180) * -90);
+            // 画像サイズの半分だけずらして画像を描画する
+            ctx.drawImage(image, -(image.width / 2), - (image.height / 2));
+            // コンテキストを元に戻す
+            ctx.restore();
+        }
         function drawEnemyHands(handObj) {
             for (let i = 0; i < handObj.handNum; i++) {
                 //敵の手を動かす
@@ -354,32 +370,38 @@
 
                 //敵の手を表示
                 if (handObj.spawnHand[i][4] == 1) {
-                    ctx.drawImage(handGuImg, handObj.spawnHand[i][0], handObj.spawnHand[i][1]);
+                    // ctx.drawImage(handGuImg, handObj.spawnHand[i][0], handObj.spawnHand[i][1]);
+                    drawRotatedImage(handGuImg, handObj.spawnHand[i][0], handObj.spawnHand[i][1], handObj.spawnHand[i][2]);
                 } else if (handObj.spawnHand[i][4] == 2) {
-                    ctx.drawImage(handChoImg, handObj.spawnHand[i][0], handObj.spawnHand[i][1]);
+                    // ctx.drawImage(handChoImg, handObj.spawnHand[i][0], handObj.spawnHand[i][1]);
+                    drawRotatedImage(handChoImg, handObj.spawnHand[i][0], handObj.spawnHand[i][1], handObj.spawnHand[i][2]);
                 } else if (handObj.spawnHand[i][4] == 3) {
-                    ctx.drawImage(handParImg, handObj.spawnHand[i][0], handObj.spawnHand[i][1]);
+                    // ctx.drawImage(handParImg, handObj.spawnHand[i][0], handObj.spawnHand[i][1]);
+                    drawRotatedImage(handParImg, handObj.spawnHand[i][0], handObj.spawnHand[i][1], handObj.spawnHand[i][2]);
                 } else if (handObj.spawnHand[i][4] == 4) {
-                    ctx.drawImage(handToumeiImg, handObj.spawnHand[i][0], handObj.spawnHand[i][1]);
+                    // ctx.drawImage(handToumeiImg, handObj.spawnHand[i][0], handObj.spawnHand[i][1]);
+                    drawRotatedImage(handToumeiImg, handObj.spawnHand[i][0], handObj.spawnHand[i][1], handObj.spawnHand[i][2]);
+
                 }
 
                 //デバッグ用:手の位置を表示
                 // ctx.fillText(Math.floor(handObj.spawnHand[i][0]) + ", " + Math.floor(handObj.spawnHand[i][1]), handObj.spawnHand[i][0], handObj.spawnHand[i][1]);
+                // console.log(Math.floor(handObj.spawnHand[i][0]) + ", " + Math.floor(handObj.spawnHand[i][1]), handObj.spawnHand[i][0], handObj.spawnHand[i][1]);
 
                 //デバッグ用:MEとの距離を表示
-                // ctx.fillText(distance(me.x, me.y, handObj.spawnHand[i][0], handObj.spawnHand[i][1]), handObj.spawnHand[i][0], handObj.spawnHand[i][1] + 30);
+                // ctx.fillText(distance(me.x, me.y, handObj.spawnHand[i][0], handObj.spawnHand[i][1]), handObj.spawnHand[i][0], handObj.spawnHand[i][1]);
             }
         }
 
 
         //手札選択画面
         function drawSelectHandMenu() {
-            const areaGuX = (canvas.width / 4) - 25;
-            const areaGuY = (canvas.height / 2) + 100;
-            const areaChoX = (canvas.width * 2 / 4) - 25;
-            const areaChoY = (canvas.height / 2) + 100;
-            const areaParX = (canvas.width * 3 / 4) - 25;
-            const areaParY = (canvas.height / 2) + 100;
+            const areaGuX = (canvas.width / 4) - me.size / 2;
+            const areaGuY = (canvas.height / 2) + 70;
+            const areaChoX = (canvas.width * 2 / 4) - me.size / 2;
+            const areaChoY = (canvas.height / 2) + 70;
+            const areaParX = (canvas.width * 3 / 4) - me.size / 2;
+            const areaParY = (canvas.height / 2) + 70;
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             //自分を描画
@@ -394,13 +416,13 @@
 
             ctx.drawImage(handGuImg, areaGuX, areaGuY);
             ctx.drawImage(handChoImg, areaChoX, areaChoY);
-            ctx.drawImage(handParImg, areaParX, (canvas.width / 2) + 100);
+            ctx.drawImage(handParImg, areaParX, areaParY);
 
-            if (distance(me.x, me.y, areaGuX, areaGuY) < 40) {
+            if (distance(me.x, me.y, areaGuX + me.size / 2, areaGuY + me.size / 2) < 40) {
                 yourHand = 1;
-            } else if (distance(me.x, me.y, areaChoX, areaChoY) < 40) {
+            } else if (distance(me.x, me.y, areaChoX + me.size / 2, areaChoY + me.size / 2) < 40) {
                 yourHand = 2;
-            } else if (distance(me.x, me.y, areaParX, areaParY) < 40) {
+            } else if (distance(me.x, me.y, areaParX + me.size / 2, areaParY + me.size / 2) < 40) {
                 yourHand = 3;
             }
             if (yourHand != 0) {
@@ -421,7 +443,7 @@
             ctx.textAlign = "center";
             ctx.fillStyle = "black";
             ctx.fillText("開始", areaReady[0], areaReady[1]);
-            if (yourHandSelected == true && distance(me.x + (me.size / 2), me.y + (me.size / 2), areaReady[0], areaReady[1]) < 50) {//meの位置は画像の左上にある。
+            if (yourHandSelected == true && distance(me.x, me.y, areaReady[0], areaReady[1]) < 50) {
                 gameReady = true;
             }
             if (gameReady) {
@@ -517,13 +539,25 @@
                     $("#enemyMessageText").text("それ以上は動物虐待になりますよ？");
                 }
             }
+            if (stageNumber === 2) {
+                $("#enemyMessageText").text("考えがまとまったようですね。");
+                $("#enemyImage").children("img").attr("src", "./img/dora_oko.png");
+                if (resultScore < 0) {
+                    $("#enemyMessageText").text("猫の手も借りたい。ですか？");
+                } else if (1 <= resultScore && resultScore < 20) {
+                    $("#enemyMessageText").text("私の手は万能のはず・・・？");
+                }
+                else if (20 <= resultScore) {
+                    $("#enemyMessageText").text("未来の叡智が・・・");
+                }
+            }
         }
 
         //ステージ終了時のテキスト表示
         function stageEndMessage() {
             //終了時会話フェーズ
             if (stageNumber === 1) {
-                if (scoreWinCount - scoreLoseCount < 5) {
+                if (resultScore < 5) {
                     $("#enemyMessageText").text("私の勝ちですね。ゴリラになりたいなら私の研修室へきなさい。");
                     $("#enemyImage").children("img").attr("src", "./img/gorira.png");
                     $("#stage1").text("再挑戦");
@@ -532,6 +566,30 @@
                     $("#enemyMessageText").text("ゴリラが人間に劣る・・？。最新の猫型ロボットにあとは任せます・・・");
                     $("#enemyImage").children("img").attr("src", "./img/gorira_lose.png");
                     $(".stage2").css("visibility", "visible")
+                    $("#stage1").text("戦う");
+                }
+
+            }
+            if (stageNumber === 2) {
+                if (resultScore <= 0) {
+                    $("#enemyMessageText").text("これが未来の叡智です。あなたも猫型ロボットなりますか？");
+                    $("#enemyImage").children("img").attr("src", "./img/dora.png");
+                    $("#stage2").text("再挑戦");
+                }
+                else if (0 < resultScore && resultScore <= 20) {
+                    $("#enemyMessageText").text("慢心しましたね。これだから古代人は・・・");
+                    $("#enemyImage").children("img").attr("src", "./img/dora.png");
+                    $("#stage2").text("再挑戦");
+
+                } else if (20 <= resultScore) {
+                    $("#enemyMessageText").text("未来の技術が、古代人ごときに負けた・・・・神頼みでもしますか・・・");
+                    $("#enemyImage").children("img").attr("src", "./img/dora.png");
+                    $(".stage3").css("visibility", "visible")
+                    $("#stage2").text("戦う");
+
+                } else {
+                    $("#enemyMessageText").text("これが未来の叡智です。");
+                    $("#enemyImage").children("img").attr("src", "./img/dora.png");
                 }
 
             }
@@ -566,6 +624,71 @@
 
             $("#enemyMessageText").html("人間ごときが私に勝負を挑もうとはいい度胸ですね。");
             $("#enemyImage").children("img").attr("src", "./img/gorira.png");
+
+            //描画開始
+            myHandSelectStart();//手札選択画面を表示する
+        })
+        $("#stage2").on("click", function () {
+
+
+            stageNumber = 2;
+            //stage1:gameMaster
+
+            //初期化処理
+            initGame();//スコア、描画を初期化
+
+            //ステージの設定
+            enemyHandsWaveNumMax = 5;
+            stageEnemyHandsArray = Array(enemyHandsWaveNumMax);
+            for (let j = 0; j < enemyHandsWaveNumMax; j++) {
+                stageEnemyHandsArray[j] = JSON.parse(JSON.stringify(enemyHandsMaster));//オブジェクトのディープコピーしてくれるらしい。(同じ参照元ではない)
+                stageEnemyHandsArray[j].handNum = 50;
+                setEnemyHands(stageEnemyHandsArray[j]);//敵の手の初期化
+
+                let theta = 0;
+                for (let i = 0; i < stageEnemyHandsArray[j].handNum; i++) {
+
+                    //x,y座標
+                    if (j < 3) {//ウェーブの設定
+                        // 下から湧く
+                        stageEnemyHandsArray[j].spawnHand[i][0] = setRandom(0, canvas.width);
+                        stageEnemyHandsArray[j].spawnHand[i][1] = 550;
+                    }
+                    else {
+                        [stageEnemyHandsArray[j].spawnHand[i][0], stageEnemyHandsArray[j].spawnHand[i][1]] = initHandPoint();
+                    }
+
+
+                    //角度
+                    if (j < 3) {//ウェーブの設定
+                        theta = Math.PI * 90 / 180;
+                    }
+                    else {
+                        theta = Math.atan2(stageEnemyHandsArray[j].spawnHand[i][1] - canvas.height / 2, stageEnemyHandsArray[j].spawnHand[i][0] - canvas.width / 2);//キャンバス中心への角度
+                    }
+                    stageEnemyHandsArray[j].spawnHand[i][2] = theta;
+
+                    //スピード
+                    stageEnemyHandsArray[j].spawnHand[i][3] = 3;
+
+                    //手の種類(ぐーてょきぱー)
+                    stageEnemyHandsArray[j].spawnHand[i][4] = 1;
+
+                }
+            };
+            waveDelay = 2000;//msec 1000ぐらいが怪しいライン(小さいとバグる)
+
+            //開始前会話フェーズ
+            $("#howToWin").html("合計スコア20以上でクリア！");
+            $("#win").text("win: ");
+            $("#ifwin").text("+1");
+            $("#draw").text("draw: ");
+            $("#ifdraw").text("-5");
+            $("#lose").text("lose: ");
+            $("#iflose").text("-5");
+
+            $("#enemyMessageText").html("この手は丸いが何でも掴むことができる。<br><u>よく考えて</u>手を選ぶことですね。");
+            $("#enemyImage").children("img").attr("src", "./img/dora.png");
 
             //描画開始
             myHandSelectStart();//手札選択画面を表示する
