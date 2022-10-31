@@ -45,9 +45,6 @@
         border: rgb(10, 255, 255) 5px ridge;
     }
 
-    .gameHelp p {
-        font-weight: bold;
-    }
 
     .exp {
         text-align: left;
@@ -176,7 +173,6 @@
     button {
         padding: 10px 30px;
         font-size: 15px;
-        color: white;
         background-color: rgb(0, 67, 83);
         border: 3px rgb(157, 157, 157) solid;
 
@@ -187,6 +183,7 @@
         background-image: url("./img/gorira.png");
         background-size: cover;
         background-position: center;
+        color: white;
     }
 
     #stage1:hover {
@@ -199,6 +196,34 @@
         visibility: hidden;
     }
 
+    #stage2 {
+        color: red;
+        font-weight: bold;
+        background-image: url("./img/dora.png");
+        background-size: cover;
+        background-position: center;
+    }
+
+    #stage2:hover {
+        color: white;
+        background-image: url("./img/dora_oko.png");
+        background-size: cover;
+        background-position: center;
+    }
+
     .stage3 {
         visibility: hidden;
+    }
+
+    #stage3 {
+        color: white;
+        background-image: url("./img/dora.png");
+        background-size: cover;
+        background-position: center;
+    }
+
+    #stage3:hover {
+        background-image: url("./img/dora_oko.png");
+        background-size: cover;
+        background-position: center;
     }
