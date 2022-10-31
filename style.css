@@ -9,7 +9,8 @@
 
     /* キャンバス */
     #myCanvas {
-        background: #fff;
+        /* background: #fff; */
+        background: #222;
         display: block;
         margin: 0px auto;
         border: rgb(188, 188, 188) 5px ridge;
@@ -167,6 +168,8 @@
         justify-content: center;
         align-items: center;
         flex-direction: column;
+        color: white;
+        margin-top: 5px;
 
     }
 
@@ -217,13 +220,13 @@
 
     #stage3 {
         color: white;
-        background-image: url("./img/dora.png");
+        background-image: url("./img/sen.png");
         background-size: cover;
         background-position: center;
     }
 
     #stage3:hover {
-        background-image: url("./img/dora_oko.png");
+        background-image: url("./img/sen_oko.png");
         background-size: cover;
         background-position: center;
     }
