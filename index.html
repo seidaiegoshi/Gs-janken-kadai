@@ -621,11 +621,11 @@
                 if (resultScore <= 0) {
                     $("#enemyMessageText").text("修行が足りてないようですね。自信を見つめ直して「Why me?」を深堀りしてはいかがでしょうか。");
                     $("#enemyImage").children("img").attr("src", "./img/sen.png");
-                    $("#stage2").text("再挑戦");
+                    $("#stage3").text("再挑戦");
                 } else if (0 < resultScore && resultScore < 5) {
                     $("#enemyMessageText").text("いいところまでは来ていますよ。");
                     $("#enemyImage").children("img").attr("src", "./img/sen.png");
-                    $("#stage2").text("再挑戦");
+                    $("#stage3").text("再挑戦");
 
                 } else if (5 <= resultScore) {
                     $("#enemyMessageText").text("あなたの勝ちです。これに慢心せず挑み続けなさい。");
