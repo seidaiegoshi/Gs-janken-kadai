@@ -1,848 +1,892 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="./style.css">
-    <link rel="icon" href="./img/gu.png" />
-
-    <title>じゃんけん覇道</title>
-</head>
-
-<body>
-    <div class="gamePad">
-        <div class="sideBarLeft">
-            <div class="gameHelp">
-                <div class="howtoplay">HOW TO PLAY</div>
-                <div class="exp">
-                    <p><b>とにかくじゃんけんに勝て！</b></p>
-                    <p>ステージを選択して開始！</p>
-                    <p>矢印キーで移動</p>
-                </div>
-
-            </div>
-            <div class="myInfo">
-                <div id="howToWin"></div>
-                <div><span id="win"></span>
-                    <span id="ifwin"></span>
-                </div>
-                <div><span id="draw"></span><span id="ifdraw"></span></div>
-                <div><span id="lose"></span><span id="iflose"></span></div>
-
-                <div class="result">
-                    <div id="score"></div>
-                </div>
-            </div>
-        </div>
-        <div class="CenterCanvas">
-            <canvas id="myCanvas" width="500" height="500">
-            </canvas>
-        </div>
-        <div class="sideBarRight">
-            <div id="enemyImage">
-                <img src="" alt="">
-            </div>
-            <div class="enemyMessageArea">
-                <div id="enemyMessageText">・・・</div>
-            </div>
-        </div>
-    </div>
-
-    <div class="canvasBottom">
-        <div>STAGE SELECT</div>
-        <div class="stageSelect">
-            <div class="stages">
-                <div class="stage1">
-                    <p>1.じゃんけん好きなゴリラ</p>
-                    <button id="stage1">戦う</button>
-                </div>
-                <div class="stage2">
-                    <p>2.ド○えもん</p>
-                    <button id="stage2">戦う</button>
-                </div>
-                <div class="stage3">
-                    <p>3.千手観音</p>
-                    <button id="stage3">戦う</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-
-
-    <!-- ここからスクリプト -->
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-    <script>
-        //キャンバス取得
-        const canvas = $("#myCanvas")[0];
-        const ctx = canvas.getContext("2d");
-
-        //ボールの大きさ
-        const ballRadius = 10;
-
-        //キー入力の変化量
-        let dx = 5;
-        let dy = 5;
-
-        //自分の情報
-        const me = {
-            img: new Image(),
-            x: (canvas.width / 2),
-            y: (canvas.height / 2),
-            size: 50,
-            collision: 15,
-            hand: 0,//0:gu, 1:cho, 2:par
-        }
-        me.img.src = "img/me.png"
-
-        //手札選択画面
-        let yourHand = 0; //1gu, 2cho, 3par
-        let yourHandSelected = false;
-        let gameReady = false;
-        const areaReady = [canvas.width / 2, canvas.height / 2 - 50]
-
-        //ステージ設定
-        let enemyHandsWaveNumMax;
-        let waveCount; //現在のwave
-        let waveDelay;//ウェーブの間隔
-        let gameFinish;
-
-        //描画設定
-        let onlyMeInterval;
-        let drawingInterval;
-
-        //敵の手の設定
-        let stageEnemyHandsArray;
-        const maxSpawn = 50;//手の最大出現数
-        enemyHandsMaster = {
-            handNum: 20,
-            handSpeed: 0.5,
-            spawnHand: Array(maxSpawn),
-        }
-        handGuImg = new Image();
-        handChoImg = new Image();
-        handParImg = new Image();
-        handToumeiImg = new Image();
-        handGuImg.src = "img/gu.png";
-        handChoImg.src = "img/cho.png";
-        handParImg.src = "img/par.png";
-        handToumeiImg.src = "img/transparence.png";
-
-        //キー入力の設定
-        let keyRightPressed = false;
-        let keyLeftPressed = false;
-        let keyUpPressed = false;
-        let keyDownPressed = false;
-
-        document.addEventListener("keyup", keyUpHandler, false);
-        document.addEventListener("keydown", keyDownHandler, false);
-
-        //スコアの設定
-        let scoreWinCount = 0;
-        let scoreDrawCount = 0;
-        let scoreLoseCount = 0;
-        let resultScore
-
-        function displayScore() {
-            if (stageNumber === 1) {
-                resultScore = scoreWinCount - scoreLoseCount;
-            } else if (stageNumber === 2) {
-                resultScore = scoreWinCount - (scoreLoseCount * 5) - (scoreDrawCount * 5);
-            } else if (stageNumber === 3) {
-                resultScore = scoreWinCount - scoreLoseCount - scoreDrawCount
-            }
-
-            $("#score").text("Score: " + (resultScore));
-        }
-
-        function initGame() {
-            //スコアを初期化
-            scoreWinCount = 0;
-            scoreDrawCount = 0;
-            scoreLoseCount = 0;
-            resultScore = 0
-            yourHand = 0;
-            displayScore();
-
-            //meを初期位置へ
-            me.x = (canvas.width / 2);
-            me.y = (canvas.height) - 50;
-
-            //ゲーム開始パラメータを初期化
-            yourHandSelected = false;
-            gameReady = false;
-            waveCount = 0; //現在のwave
-            gameFinish = false;
-
-            //描画処理を初期化
-            if (onlyMeInterval) {
-                clearInterval(onlyMeInterval);//自分だけ描画を止め
-            }
-            if (drawingInterval) {
-                clearInterval(drawingInterval);
-            }
-        }
-
-        //キーを押したときの処理
-        function keyDownHandler(e) {
-            if (e.key === "Right" || e.key === "ArrowRight") {
-                keyRightPressed = true;
-            } else if (e.key === "Left" || e.key === "ArrowLeft") {
-                keyLeftPressed = true;
-            } else if (e.key === "Up" || e.key === "ArrowUp") {
-                keyUpPressed = true;
-            } else if (e.key === "Down" || e.key === "ArrowDown") {
-                keyDownPressed = true;
-            }
-        }
-
-        function keyUpHandler(e) {
-            if (e.key === "Right" || e.key === "ArrowRight") {
-                keyRightPressed = false;
-            } else if (e.key === "Left" || e.key === "ArrowLeft") {
-                keyLeftPressed = false;
-            } else if (e.key === "Up" || e.key === "ArrowUp") {
-                keyUpPressed = false;
-            } else if (e.key === "Down" || e.key === "ArrowDown") {
-                keyDownPressed = false;
-            }
-        }
-
-
-        function keyMove() {
-            if (keyRightPressed) {
-                me.x += dx;
-            } if (keyLeftPressed) {
-                me.x -= dx;
-            } if (keyUpPressed) {
-                me.y -= dy;
-            } if (keyDownPressed) {
-                me.y += dy;
-            }
-
-            //囲いの当たり判定
-            if (me.x + (me.size / 3) > canvas.width) {//右
-                me.x -= dx;
-            } if (me.x - (me.size / 3) < 0) {//左
-                me.x += dx;
-            } if (me.y - (me.size / 3) < 0) {//上
-                me.y += dy;
-            } if (me.y + (me.size / 3) > canvas.height) {//下
-                me.y -= dy;
-            }
-        }
-
-        function drawMe() {//自分の位置を表示する。
-            const sizeHand = 25;
-            //自キャラを表示
-            ctx.drawImage(me.img, me.x - me.size / 2, me.y - me.size / 2);
-
-            //自キャラの右下に自分の手アイコンを表示
-            if (yourHand === 1) {
-                ctx.drawImage(handGuImg, me.x, me.y, sizeHand, sizeHand);
-            } else if (yourHand === 2) {
-                ctx.drawImage(handChoImg, me.x, me.y, sizeHand, sizeHand);
-            } else if (yourHand === 3) {
-                ctx.drawImage(handParImg, me.x, me.y, sizeHand, sizeHand);
-            }
-            //デバッグ用:現在位置表示
-            // ctx.fillText(me.x + ", " + me.y, me.x, me.y);
-        }
-
-        function make_janken_hand() {//じゃんけんの手を生成する。
-            // 1:gu
-            // 2.cho
-            // 3.par
-            const min = 1;
-            const max = 3;
-            return Math.floor(Math.random() * (max - min + 1)) + min
-        }
-
-        function jankenJudge(me, enemy) {//じゃんけんの判定をする。
-            // 1:gu
-            // 2.cho
-            // 3.par
-            let judge = "結果";
-            if (me === 1) {//gu
-                if (enemy === 1) {
-                    judge = "あいこ";
-                } else if (enemy === 2) {
-                    judge = "かち";
-                } else {
-                    judge = "まけ";
-                }
-            } else if (me === 2) {//choki
-                if (enemy === 1) {
-                    judge = "まけ";
-                } else if (enemy === 2) {
-                    judge = "あいこ";
-                } else {
-                    judge = "かち";
-                }
-            } else {//pa
-                if (enemy === 1) {
-                    judge = "かち";
-                } else if (enemy === 2) {
-                    judge = "まけ";
-                } else {
-                    judge = "あいこ";
-                }
-            }
-            return judge;
-        }
-
-        //手の出現について初期化
-        function initHandArray(handOjb) {
-            for (let i = 0; i < maxSpawn; i++) {
-                handOjb.spawnHand[i] = Array(4);//x,y,angle,speed,handKind
-                handOjb.spawnHand[i][0] = 0; //x
-                handOjb.spawnHand[i][1] = 0;//y
-                handOjb.spawnHand[i][2] = 0;//angle
-                handOjb.spawnHand[i][3] = 0;//speed
-                handOjb.spawnHand[i][4] = 0;//handkind
-            }
-        }
-
-        function setRandom(min, max) {
-            return Math.floor(Math.random() * (max - min + 1)) + min
-        }
-        function initHandPoint() {//手の出現場所を決定する
-            const wmin = 0;
-            const wmax = canvas.width;
-            const hmin = 0;
-            const hmax = canvas.height;
-            let pointX = setRandom(wmin, wmax);
-            let pointY = setRandom(hmin, hmax);
-
-            //開始位置を画面外へおいやる
-            if (pointX < wmax / 2) {
-                pointX += wmax + me.size;
-            } else {
-                pointX -= wmax + me.size;
-            }
-            if (pointY < hmax / 2) {
-                pointY += hmax + me.size;
-            } else {
-                pointY -= hmax + me.size;
-            }
-            return [pointX, pointY]
-        }
-
-        //すべての手の設定をする。
-        function setEnemyHands(handObj) {
-            //0:x
-            //1:y
-            //2:theta
-            //3:speed
-            //4:hand kind
-            initHandArray(handObj);//一旦リセット
-
-            let theta = 0;
-            for (let i = 0; i < handObj.handNum; i++) {
-                //x,y座標
-                [handObj.spawnHand[i][0], handObj.spawnHand[i][1]] = initHandPoint();
-
-                //角度
-                theta = Math.atan2(handObj.spawnHand[i][1] - canvas.height / 2, handObj.spawnHand[i][0] - canvas.width / 2);//キャンバス中心への角度
-                handObj.spawnHand[i][2] = theta + (Math.random() * Math.PI / 5);//キャンバス中心への角度に60°分の乱数を追加なるく中心に向かうように。
-
-                //スピード
-                handObj.spawnHand[i][3] = handObj.handSpeed;
-
-                //手の種類(ぐーてょきぱー)
-                handObj.spawnHand[i][4] = make_janken_hand();
-
-            }
-        }
-
-
-        function drawRotatedImage(image, x, y, angle) {
-            // コンテキストを保存する
-            ctx.save();
-            // 回転の中心に原点を移動する
-            ctx.translate(x, y);
-            // canvasを回転する
-            ctx.rotate(angle + (Math.PI / 180) * -90);
-            // 画像サイズの半分だけずらして画像を描画する
-            ctx.drawImage(image, -(image.width / 2), - (image.height / 2));
-            // コンテキストを元に戻す
-            ctx.restore();
-        }
-        function drawEnemyHands(handObj, horming) {
-            for (let i = 0; i < handObj.handNum; i++) {
-                //敵の手を動かす
-                if (horming) {//追尾
-                    handObj.spawnHand[i][0] -= handObj.spawnHand[i][3] * Math.cos(Math.atan2(handObj.spawnHand[i][1] - me.y, handObj.spawnHand[i][0] - me.x)); //  dx = r cos (theta)
-                    handObj.spawnHand[i][1] -= handObj.spawnHand[i][3] * Math.sin(Math.atan2(handObj.spawnHand[i][1] - me.y, handObj.spawnHand[i][0] - me.x)); //  dy = r sin (theta)
-                }
-                else {
-                    handObj.spawnHand[i][0] -= handObj.spawnHand[i][3] * Math.cos(handObj.spawnHand[i][2]); //  dx = r cos (theta)
-                    handObj.spawnHand[i][1] -= handObj.spawnHand[i][3] * Math.sin(handObj.spawnHand[i][2]); //  dy = r sin (theta)
-                }
-
-                //敵の手を表示
-                if (handObj.spawnHand[i][4] == 1) {
-                    drawRotatedImage(handGuImg, handObj.spawnHand[i][0], handObj.spawnHand[i][1], handObj.spawnHand[i][2]);
-                } else if (handObj.spawnHand[i][4] == 2) {
-                    drawRotatedImage(handChoImg, handObj.spawnHand[i][0], handObj.spawnHand[i][1], handObj.spawnHand[i][2]);
-                } else if (handObj.spawnHand[i][4] == 3) {
-                    drawRotatedImage(handParImg, handObj.spawnHand[i][0], handObj.spawnHand[i][1], handObj.spawnHand[i][2]);
-                } else if (handObj.spawnHand[i][4] == 4) {
-                    drawRotatedImage(handToumeiImg, handObj.spawnHand[i][0], handObj.spawnHand[i][1], handObj.spawnHand[i][2]);
-                }
-
-                //デバッグ用:手の位置を表示
-                // ctx.fillText(Math.floor(handObj.spawnHand[i][0]) + ", " + Math.floor(handObj.spawnHand[i][1]), handObj.spawnHand[i][0], handObj.spawnHand[i][1]);
-                // console.log(Math.floor(handObj.spawnHand[i][0]) + ", " + Math.floor(handObj.spawnHand[i][1]), handObj.spawnHand[i][0], handObj.spawnHand[i][1]);
-
-                //デバッグ用:MEとの距離を表示
-                // ctx.fillText(distance(me.x, me.y, handObj.spawnHand[i][0], handObj.spawnHand[i][1]), handObj.spawnHand[i][0], handObj.spawnHand[i][1]);
-            }
-        }
-
-
-        //手札選択画面
-        function drawSelectHandMenu() {
-            const areaGuX = (canvas.width / 4) - me.size / 2;
-            const areaGuY = (canvas.height / 2) + 70;
-            const areaChoX = (canvas.width * 2 / 4) - me.size / 2;
-            const areaChoY = (canvas.height / 2) + 70;
-            const areaParX = (canvas.width * 3 / 4) - me.size / 2;
-            const areaParY = (canvas.height / 2) + 70;
-
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            //自分を描画
-            drawMe();
-
-            //自分の手札を決定する。
-            ctx.font = "20px san-serif";
-            ctx.textAlign = "center";
-            ctx.fillStyle = "white";
-            ctx.fillText("自分の手を決定しよう", canvas.width / 2, 80);
-            ctx.fillText("手を選んで「開始」に触ったらスタート！", canvas.width / 2, 105);
-
-            ctx.drawImage(handGuImg, areaGuX, areaGuY);
-            ctx.drawImage(handChoImg, areaChoX, areaChoY);
-            ctx.drawImage(handParImg, areaParX, areaParY);
-
-            if (distance(me.x, me.y, areaGuX + me.size / 2, areaGuY + me.size / 2) < 40) {
-                yourHand = 1;
-            } else if (distance(me.x, me.y, areaChoX + me.size / 2, areaChoY + me.size / 2) < 40) {
-                yourHand = 2;
-            } else if (distance(me.x, me.y, areaParX + me.size / 2, areaParY + me.size / 2) < 40) {
-                yourHand = 3;
-            }
-            if (yourHand != 0) {
-                yourHandSelected = true;
-            }
-
-
-            //開始合図の円
-            ctx.beginPath();
-            ctx.arc(areaReady[0], areaReady[1], 50, 0, Math.PI * 2, true);
-            ctx.fillStyle = "rgba(210,227,73,0.7)";
-            // ctx.strokeStyle = 'red';
-            ctx.lineWidth = 5;
-            // ctx.stroke();
-            ctx.fill();
-            ctx.closePath();
-
-            ctx.textAlign = "center";
-            ctx.fillStyle = "black";
-            ctx.fillText("開始", areaReady[0], areaReady[1]);
-            if (yourHandSelected == true && distance(me.x, me.y, areaReady[0], areaReady[1]) < 50) {
-                gameReady = true;
-            }
-            if (gameReady) {
-
-                gameStart();
-
-                for (let i = 0; i < enemyHandsWaveNumMax - 1; i++) {//2wave目からなので1から。
-                    setTimeout(() => {
-                        if (gameReady) {
-                            waveCount++;
-                        }
-                    }, (i + 1) * waveDelay);
-                }
-            }
-
-            //meの移動
-            keyMove();
-
-        }
-
-        //自分と相手の距離を計算する
-        function distance(x1, y1, x2, y2) {
-            return Math.floor(Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2)));
-        }
-
-        //キャンバス描画
-        function draw() {
-            //キャンバスをクリア
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            //自分を描画
-            drawMe();
-
-            //meの移動:キー入力
-            keyMove();
-
-
-            for (let j = 0; j < waveCount + 1; j++) {//現在のwave数まで回す
-                if ((stageNumber === 3 && 6 <= j && j <= 9) || (stageNumber === 3 && 15 <= j && j <= 17)) {
-                    if ((stageNumber === 3 && 15 <= waveCount && waveCount < 18) || (stageNumber === 3 && 6 <= waveCount && waveCount < 13)) {
-                        drawEnemyHands(stageEnemyHandsArray[j], true); //敵の手を表示
-                    } else {
-                        drawEnemyHands(stageEnemyHandsArray[j], false); //敵の手を表示
-                    }
-                } else {
-
-                    drawEnemyHands(stageEnemyHandsArray[j], false); //敵の手を表示
-                }
-                if (j === enemyHandsWaveNumMax - 1) {//最終ウェーブになると終了判定を行う。
-                    gameFinish = true;
-                }
-
-                for (let i = 0; i < stageEnemyHandsArray[j].handNum; i++) {//配列の手の数
-
-                    //  当たり判定
-                    if (distance(me.x, me.y, stageEnemyHandsArray[j].spawnHand[i][0], stageEnemyHandsArray[j].spawnHand[i][1]) < 40) {
-                        if (stageEnemyHandsArray[j].spawnHand[i][4] != 4) {//画像がとうめいじゃなかったら、未判定であれば
-
-                            //じゃんけんの判定 してスコアリング
-                            if (jankenJudge(yourHand, stageEnemyHandsArray[j].spawnHand[i][4]) === "かち") {
-                                scoreWinCount++;
-                            } else if (jankenJudge(yourHand, stageEnemyHandsArray[j].spawnHand[i][4]) === "あいこ") {
-                                scoreDrawCount++;
-                            } else if (jankenJudge(yourHand, stageEnemyHandsArray[j].spawnHand[i][4]) === "まけ") {
-                                scoreLoseCount++
-                            };
-
-                            displayScore();//スコアボードに表示
-
-                            //あたったら透明にする
-                            stageEnemyHandsArray[j].spawnHand[i][4] = 4;
-                        }
-                    }
-
-                    if (j === enemyHandsWaveNumMax - 1) {//最終ウェーブになると終了判定を行う。
-                        //すべての手が画面上からいなくなったら。(結構余分に範囲とってある。)
-                        if ((-canvas.width / 2 < stageEnemyHandsArray[j].spawnHand[i][0] && stageEnemyHandsArray[j].spawnHand[i][0] < canvas.width / 2) && (-canvas.height / 2 < stageEnemyHandsArray[j].spawnHand[i][1] && stageEnemyHandsArray[j].spawnHand[i][1] < canvas.height / 2)) {
-                            gameFinish = false;
-                        }
-                    }
-                }
-                stagePlayingMessage();
-            }
-
-            if (gameFinish) {
-                stageEndMessage();
-                ctx.font = "bold 40px";
-                ctx.textAlign = "center";
-                ctx.fillStyle = "white";
-                ctx.fillText("終了！", canvas.width / 2, canvas.height / 2);
-                clearInterval(drawingInterval);//drawを停止。
-            }
-        }
-
-
-        //プレイ中のテキスト表示
-        function stagePlayingMessage() {
-            if (stageNumber === 1) {
-                $("#enemyMessageText").text("ゴリラのほうが人間より知能が高いということを証明してみせましょう。");
-                $("#enemyImage").children("img").attr("src", "./img/gorira_oko.png");
-                if (5 <= resultScore && resultScore < 10) {
-                    $("#enemyMessageText").text("なかなかやるようですね。");
-                } else if (resultScore >= 10) {
-                    $("#enemyMessageText").text("それ以上は動物虐待になりますよ？");
-                }
-            }
-            if (stageNumber === 2) {
-                $("#enemyMessageText").text("考えがまとまったようですね。");
-                $("#enemyImage").children("img").attr("src", "./img/dora_oko.png");
-                if (resultScore < 0) {
-                    $("#enemyMessageText").text("猫の手も借りたい。ですか？");
-                } else if (1 <= resultScore && resultScore < 20) {
-                    $("#enemyMessageText").text("私の手は万能のはず・・・？");
-                }
-                else if (20 <= resultScore) {
-                    $("#enemyMessageText").text("未来の叡智が・・・");
-                }
-            }
-            if (stageNumber === 3) {
-                $("#enemyMessageText").text("人生そう甘くはありません。");
-                $("#enemyImage").children("img").attr("src", "./img/sen_oko.png");
-                if (resultScore < 0) {
-                    $("#enemyMessageText").text("逃げる事はできません。");
-                } else if (1 <= resultScore && resultScore < 5) {
-                    $("#enemyMessageText").text("やる気だけは認めましょう。");
-                }
-                else if (5 <= resultScore) {
-                    $("#enemyMessageText").text("神を越えようと言うのですか？");
-                }
-            }
-        }
-
-        //ステージ終了時のテキスト表示
-        function stageEndMessage() {
-            //終了時会話フェーズ
-            if (stageNumber === 1) {
-                if (resultScore < 5) {
-                    $("#enemyMessageText").text("私の勝ちですね。ゴリラになりたいなら私の研修室へきなさい。");
-                    $("#enemyImage").children("img").attr("src", "./img/gorira.png");
-                    $("#stage1").text("再挑戦");
-                } else {
-                    $("#enemyMessageText").text("ゴリラが人間に劣る・・？。最新の猫型ロボットにあとは任せます・・・");
-                    $("#enemyImage").children("img").attr("src", "./img/gorira_lose.png");
-                    $(".stage2").css("visibility", "visible")
-                    $("#stage1").text("戦う");
-                }
-
-            }
-            if (stageNumber === 2) {
-                if (resultScore <= 0) {
-                    $("#enemyMessageText").text("これが未来の叡智です。あなたも猫型ロボットなりますか？");
-                    $("#enemyImage").children("img").attr("src", "./img/dora.png");
-                    $("#stage2").text("再挑戦");
-                } else if (0 < resultScore && resultScore <= 20) {
-                    $("#enemyMessageText").text("慢心しましたね。これだから古代人は・・・");
-                    $("#enemyImage").children("img").attr("src", "./img/dora.png");
-                    $("#stage2").text("再挑戦");
-
-                } else if (20 < resultScore) {
-                    $("#enemyMessageText").text("未来の技術が、古代人ごときに負けた・・・・神頼みでもしますか・・・");
-                    $("#enemyImage").children("img").attr("src", "./img/dora_oko.png");
-                    $(".stage3").css("visibility", "visible")
-
-                }
-
-            }
-            if (stageNumber === 3) {
-                if (resultScore <= 0) {
-                    $("#enemyMessageText").text("修行が足りてないようですね。自信を見つめ直して「Why me?」を深堀りしてはいかがでしょうか。");
-                    $("#enemyImage").children("img").attr("src", "./img/sen.png");
-                    $("#stage3").text("再挑戦");
-                } else if (0 < resultScore && resultScore < 5) {
-                    $("#enemyMessageText").text("いいところまでは来ていますよ。");
-                    $("#enemyImage").children("img").attr("src", "./img/sen.png");
-                    $("#stage3").text("再挑戦");
-
-                } else if (5 <= resultScore) {
-                    $("#enemyMessageText").text("あなたの勝ちです。これに慢心せず挑み続けなさい。");
-                    $("#enemyImage").children("img").attr("src", "./img/sen.png");
-                    $(".stage3").css("visibility", "visible")
-                    $("#stage2").text("戦う");
-
-                }
-
-            }
-        }
-
-        //ボタン押下時ステージ設定処理、描画開始。
-        let stageNumber;
-        $("#stage1").on("click", function () {
-            stageNumber = 1;
-
-            //初期化処理
-            initGame();//スコア、描画を初期化
-
-            //ステージの設定
-            enemyHandsWaveNumMax = 3;
-            stageEnemyHandsArray = Array(enemyHandsWaveNumMax);
-            for (let i = 0; i < enemyHandsWaveNumMax; i++) {
-                stageEnemyHandsArray[i] = JSON.parse(JSON.stringify(enemyHandsMaster));//オブジェクトのディープコピーしてくれるらしい。(同じ参照元ではない)
-                setEnemyHands(stageEnemyHandsArray[i]);//敵の手の初期化
-            };
-            waveDelay = 4000;//msec 1000ぐらいが怪しいライン(小さいとバグる)
-
-            //開始前会話フェーズ
-            $("#howToWin").html("合計スコア5以上でクリア！");
-            $("#win").text("win: ");
-            $("#ifwin").text("+1");
-            $("#draw").text("draw: ");
-            $("#ifdraw").text("0");
-            $("#lose").text("lose: ");
-            $("#iflose").text("-1");
-
-            $("#enemyMessageText").html("人間ごときが私に勝負を挑もうとはいい度胸ですね。");
-            $("#enemyImage").children("img").attr("src", "./img/gorira.png");
-
-            //描画開始
-            myHandSelectStart();//手札選択画面を表示する
-        })
-        $("#stage2").on("click", function () {
-            stageNumber = 2;
-
-            //初期化処理
-            initGame();//スコア、描画を初期化
-
-            //ステージの設定
-            enemyHandsWaveNumMax = 5;
-            stageEnemyHandsArray = Array(enemyHandsWaveNumMax);
-            for (let j = 0; j < enemyHandsWaveNumMax; j++) {
-                stageEnemyHandsArray[j] = JSON.parse(JSON.stringify(enemyHandsMaster));//オブジェクトのディープコピーしてくれるらしい。(同じ参照元ではない)
-                stageEnemyHandsArray[j].handNum = 50;
-                setEnemyHands(stageEnemyHandsArray[j]);//敵の手の初期化
-
-                let theta = 0;
-                for (let i = 0; i < stageEnemyHandsArray[j].handNum; i++) {
-
-                    //x,y座標
-                    if (j < 3) {//ウェーブの設定
-                        // 下から湧く
-                        stageEnemyHandsArray[j].spawnHand[i][0] = setRandom(0, canvas.width);
-                        stageEnemyHandsArray[j].spawnHand[i][1] = 550;
-                    } else {
-                        [stageEnemyHandsArray[j].spawnHand[i][0], stageEnemyHandsArray[j].spawnHand[i][1]] = initHandPoint();
-                    }
-
-                    //角度
-                    if (j < 3) {//ウェーブの設定
-                        theta = Math.PI * 90 / 180;
-                    } else {
-                        theta = Math.atan2(stageEnemyHandsArray[j].spawnHand[i][1] - canvas.height / 2, stageEnemyHandsArray[j].spawnHand[i][0] - canvas.width / 2);//キャンバス中心への角度
-                    }
-                    stageEnemyHandsArray[j].spawnHand[i][2] = theta;
-
-                    //スピード
-                    stageEnemyHandsArray[j].spawnHand[i][3] = 3;
-
-                    //手の種類(ぐーてょきぱー)
-                    stageEnemyHandsArray[j].spawnHand[i][4] = 1;
-
-                }
-            };
-            waveDelay = 2000;//msec 1000ぐらいが怪しいライン(小さいとバグる)
-
-            //開始前会話フェーズ
-            $("#howToWin").html("合計スコア20以上でクリア！");
-            $("#win").text("win: ");
-            $("#ifwin").text("+1");
-            $("#draw").text("draw: ");
-            $("#ifdraw").text("-5");
-            $("#lose").text("lose: ");
-            $("#iflose").text("-5");
-
-            $("#enemyMessageText").html("この手は丸いが何でも掴むことができる。<br><u>よく考えて</u>手を選ぶことですね。");
-            $("#enemyImage").children("img").attr("src", "./img/dora.png");
-
-            //描画開始
-            myHandSelectStart();//手札選択画面を表示する
-        })
-        $("#stage3").on("click", function () {
-            stageNumber = 3;
-
-            //初期化処理
-            initGame();//スコア、描画を初期化
-
-            //ステージの設定
-            enemyHandsWaveNumMax = 20;
-            stageEnemyHandsArray = Array(enemyHandsWaveNumMax);
-            for (let j = 0; j < enemyHandsWaveNumMax; j++) {
-                stageEnemyHandsArray[j] = JSON.parse(JSON.stringify(enemyHandsMaster));//オブジェクトのディープコピーしてくれるらしい。(同じ参照元ではない)
-
-                if (j <= 2) {
-                    stageEnemyHandsArray[j].handNum = 20;
-                } else if (j === 6) {//追尾
-                    stageEnemyHandsArray[j].handNum = 10;
-                } else if (7 <= j && j < 10) {
-                    stageEnemyHandsArray[j].handNum = 5;
-                } else if (10 <= j && j < 13) {
-                    stageEnemyHandsArray[j].handNum = 20;
-                } else if (13 <= j && j < 15) {
-                    stageEnemyHandsArray[j].handNum = 15;
-                } else if (j === 15) {//追尾
-                    stageEnemyHandsArray[j].handNum = 10;
-                } else if (16 <= j && j < 17) {
-                    stageEnemyHandsArray[j].handNum = 5;
-                }
-                else {
-                    stageEnemyHandsArray[j].handNum = 10;
-                }
-
-
-                setEnemyHands(stageEnemyHandsArray[j]);//敵の手の初期化
-
-                let theta = 0;
-                for (let i = 0; i < stageEnemyHandsArray[j].handNum; i++) {
-                    //x,y座標
-                    if (0 <= j && j <= 2) {//ウェーブの設定
-                        // 下から湧く
-                        stageEnemyHandsArray[j].spawnHand[i][0] = setRandom(0, canvas.width);
-                        stageEnemyHandsArray[j].spawnHand[i][1] = 550;
-                        stageEnemyHandsArray[j].spawnHand[i][2] = Math.PI * 90 / 180;
-                        stageEnemyHandsArray[j].spawnHand[i][3] = 2;
-                        if (j === 0) {
-                            stageEnemyHandsArray[j].spawnHand[i][4] = 1;
-                        } else if (j === 1) {
-                            stageEnemyHandsArray[j].spawnHand[i][4] = 2;
-                        } else if (j === 2) {
-                            stageEnemyHandsArray[j].spawnHand[i][4] = 3;
-                        }
-                    } else if (13 <= j && j <= 17) {
-                        stageEnemyHandsArray[j].spawnHand[i][3] = 2;
-                    } else if (j === 15) {
-                        stageEnemyHandsArray[j].spawnHand[i][3] = 1.5;
-                    } else {
-                        [stageEnemyHandsArray[j].spawnHand[i][0], stageEnemyHandsArray[j].spawnHand[i][1]] = initHandPoint();
-                    }
-
-                }
-            };
-            waveDelay = 2000;//msec 1000ぐらいが怪しいライン(小さいとバグる)
-
-            //開始前会話フェーズ
-            $("#howToWin").html("合計スコア5以上でクリア！");
-            $("#win").text("win: ");
-            $("#ifwin").text("+1");
-            $("#draw").text("draw: ");
-            $("#ifdraw").text("-1");
-            $("#lose").text("lose: ");
-            $("#iflose").text("-1");
-
-            $("#enemyMessageText").html("ここまで来ましたか。。。心してかかられよ。");
-            $("#enemyImage").children("img").attr("src", "./img/sen.png");
-
-            //描画開始
-            myHandSelectStart();//手札選択画面を表示する
-        })
-
-
-
-
-
-        $(document).ready(function () {
-            titleImage = new Image();
-            titleImage.src = "img/title.png";
-            titleImage.onload = () => {
-                ctx.drawImage(titleImage, 0, 0);
-            }
-        });
-
-        function myHandSelectStart() {
-            if (!onlyMeInterval) {
-                onlyMeInterval = setInterval(drawSelectHandMenu, 10);//最初は自キャラだけ動かせる
-            } else {
-                clearInterval(onlyMeInterval);//自分だけ描画を止め
-                onlyMeInterval = setInterval(drawSelectHandMenu, 10);
-            }
-        }
-
-
-        function gameStart() {
-            clearInterval(onlyMeInterval);//自分だけ描画を止め
-
-            if (!drawingInterval) {
-                clearInterval(onlyMeInterval);
-                drawingInterval = setInterval(draw, 10);
-            } else {
-                clearInterval(drawingInterval);
-                clearInterval(onlyMeInterval);
-                drawingInterval = setInterval(draw, 10);
-            }
-
-        }
-    </script>
-</body>
-
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<link rel="stylesheet" href="./style.css" />
+		<link rel="icon" href="./img/gu.png" />
+
+		<title>じゃんけん覇道</title>
+	</head>
+
+	<body>
+		<div class="gamePad">
+			<div class="sideBarLeft">
+				<div class="gameHelp">
+					<div class="howtoplay">HOW TO PLAY</div>
+					<div class="exp">
+						<p><b>とにかくじゃんけんに勝て！</b></p>
+						<p>ステージを選択して開始！</p>
+						<p>矢印キーで移動</p>
+					</div>
+				</div>
+				<div class="myInfo">
+					<div id="howToWin"></div>
+					<div>
+						<span id="win"></span>
+						<span id="ifwin"></span>
+					</div>
+					<div><span id="draw"></span><span id="ifdraw"></span></div>
+					<div><span id="lose"></span><span id="iflose"></span></div>
+
+					<div class="result">
+						<div id="score"></div>
+					</div>
+				</div>
+			</div>
+			<div class="CenterCanvas">
+				<canvas id="myCanvas" width="500" height="500"> </canvas>
+			</div>
+			<div class="sideBarRight">
+				<div id="enemyImage">
+					<img src="" alt="" />
+				</div>
+				<div class="enemyMessageArea">
+					<div id="enemyMessageText">・・・</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="canvasBottom">
+			<div>STAGE SELECT</div>
+			<div class="stageSelect">
+				<div class="stages">
+					<div class="stage1">
+						<p>1.じゃんけん好きなゴリラ</p>
+						<button id="stage1">戦う</button>
+					</div>
+					<div class="stage2">
+						<p>2.ド○えもん</p>
+						<button id="stage2">戦う</button>
+					</div>
+					<div class="stage3">
+						<p>3.千手観音</p>
+						<button id="stage3">戦う</button>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- ここからスクリプト -->
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+		<script>
+			//キャンバス取得
+			const canvas = $("#myCanvas")[0];
+			const ctx = canvas.getContext("2d");
+
+			//ボールの大きさ
+			const ballRadius = 10;
+
+			//キー入力の変化量
+			let dx = 5;
+			let dy = 5;
+
+			//自分の情報
+			const me = {
+				img: new Image(),
+				x: canvas.width / 2,
+				y: canvas.height / 2,
+				size: 50,
+				collision: 15,
+				hand: 0, //0:gu, 1:cho, 2:par
+			};
+			me.img.src = "img/me.png";
+
+			//手札選択画面
+			let yourHand = 0; //1gu, 2cho, 3par
+			let yourHandSelected = false;
+			let gameReady = false;
+			const areaReady = [canvas.width / 2, canvas.height / 2 - 50];
+
+			//ステージ設定
+			let enemyHandsWaveNumMax;
+			let waveCount; //現在のwave
+			let waveDelay; //ウェーブの間隔
+			let gameFinish;
+
+			//描画設定
+			let onlyMeInterval;
+			let drawingInterval;
+
+			//敵の手の設定
+			let stageEnemyHandsArray;
+			const maxSpawn = 50; //手の最大出現数
+			enemyHandsMaster = {
+				handNum: 20,
+				handSpeed: 0.5,
+				spawnHand: Array(maxSpawn),
+			};
+			handGuImg = new Image();
+			handChoImg = new Image();
+			handParImg = new Image();
+			handToumeiImg = new Image();
+			handGuImg.src = "img/gu.png";
+			handChoImg.src = "img/cho.png";
+			handParImg.src = "img/par.png";
+			handToumeiImg.src = "img/transparence.png";
+
+			//キー入力の設定
+			let keyRightPressed = false;
+			let keyLeftPressed = false;
+			let keyUpPressed = false;
+			let keyDownPressed = false;
+
+			document.addEventListener("keyup", keyUpHandler, false);
+			document.addEventListener("keydown", keyDownHandler, false);
+
+			//スコアの設定
+			let scoreWinCount = 0;
+			let scoreDrawCount = 0;
+			let scoreLoseCount = 0;
+			let resultScore;
+
+			function displayScore() {
+				if (stageNumber === 1) {
+					resultScore = scoreWinCount - scoreLoseCount;
+				} else if (stageNumber === 2) {
+					resultScore = scoreWinCount - scoreLoseCount * 5 - scoreDrawCount * 5;
+				} else if (stageNumber === 3) {
+					resultScore = scoreWinCount - scoreLoseCount - scoreDrawCount;
+				}
+
+				$("#score").text("Score: " + resultScore);
+			}
+
+			function initGame() {
+				//スコアを初期化
+				scoreWinCount = 0;
+				scoreDrawCount = 0;
+				scoreLoseCount = 0;
+				resultScore = 0;
+				yourHand = 0;
+				displayScore();
+
+				//meを初期位置へ
+				me.x = canvas.width / 2;
+				me.y = canvas.height - 50;
+
+				//ゲーム開始パラメータを初期化
+				yourHandSelected = false;
+				gameReady = false;
+				waveCount = 0; //現在のwave
+				gameFinish = false;
+
+				//描画処理を初期化
+				if (onlyMeInterval) {
+					clearInterval(onlyMeInterval); //自分だけ描画を止め
+				}
+				if (drawingInterval) {
+					clearInterval(drawingInterval);
+				}
+			}
+
+			//キーを押したときの処理
+			function keyDownHandler(e) {
+				if (e.key === "Right" || e.key === "ArrowRight") {
+					keyRightPressed = true;
+				} else if (e.key === "Left" || e.key === "ArrowLeft") {
+					keyLeftPressed = true;
+				} else if (e.key === "Up" || e.key === "ArrowUp") {
+					keyUpPressed = true;
+				} else if (e.key === "Down" || e.key === "ArrowDown") {
+					keyDownPressed = true;
+				}
+			}
+
+			function keyUpHandler(e) {
+				if (e.key === "Right" || e.key === "ArrowRight") {
+					keyRightPressed = false;
+				} else if (e.key === "Left" || e.key === "ArrowLeft") {
+					keyLeftPressed = false;
+				} else if (e.key === "Up" || e.key === "ArrowUp") {
+					keyUpPressed = false;
+				} else if (e.key === "Down" || e.key === "ArrowDown") {
+					keyDownPressed = false;
+				}
+			}
+
+			function keyMove() {
+				if (keyRightPressed) {
+					me.x += dx;
+				}
+				if (keyLeftPressed) {
+					me.x -= dx;
+				}
+				if (keyUpPressed) {
+					me.y -= dy;
+				}
+				if (keyDownPressed) {
+					me.y += dy;
+				}
+
+				//囲いの当たり判定
+				if (me.x + me.size / 3 > canvas.width) {
+					//右
+					me.x -= dx;
+				}
+				if (me.x - me.size / 3 < 0) {
+					//左
+					me.x += dx;
+				}
+				if (me.y - me.size / 3 < 0) {
+					//上
+					me.y += dy;
+				}
+				if (me.y + me.size / 3 > canvas.height) {
+					//下
+					me.y -= dy;
+				}
+			}
+
+			function drawMe() {
+				//自分の位置を表示する。
+				const sizeHand = 25;
+				//自キャラを表示
+				ctx.drawImage(me.img, me.x - me.size / 2, me.y - me.size / 2);
+
+				//自キャラの右下に自分の手アイコンを表示
+				if (yourHand === 1) {
+					ctx.drawImage(handGuImg, me.x, me.y, sizeHand, sizeHand);
+				} else if (yourHand === 2) {
+					ctx.drawImage(handChoImg, me.x, me.y, sizeHand, sizeHand);
+				} else if (yourHand === 3) {
+					ctx.drawImage(handParImg, me.x, me.y, sizeHand, sizeHand);
+				}
+				//デバッグ用:現在位置表示
+				// ctx.fillText(me.x + ", " + me.y, me.x, me.y);
+			}
+
+			function make_janken_hand() {
+				//じゃんけんの手を生成する。
+				// 1:gu
+				// 2.cho
+				// 3.par
+				const min = 1;
+				const max = 3;
+				return Math.floor(Math.random() * (max - min + 1)) + min;
+			}
+
+			function jankenJudge(me, enemy) {
+				//じゃんけんの判定をする。
+				// 1:gu
+				// 2.cho
+				// 3.par
+				let judge = "結果";
+				if (me === 1) {
+					//gu
+					if (enemy === 1) {
+						judge = "あいこ";
+					} else if (enemy === 2) {
+						judge = "かち";
+					} else {
+						judge = "まけ";
+					}
+				} else if (me === 2) {
+					//choki
+					if (enemy === 1) {
+						judge = "まけ";
+					} else if (enemy === 2) {
+						judge = "あいこ";
+					} else {
+						judge = "かち";
+					}
+				} else {
+					//pa
+					if (enemy === 1) {
+						judge = "かち";
+					} else if (enemy === 2) {
+						judge = "まけ";
+					} else {
+						judge = "あいこ";
+					}
+				}
+				return judge;
+			}
+
+			//手の出現について初期化
+			function initHandArray(handOjb) {
+				for (let i = 0; i < maxSpawn; i++) {
+					handOjb.spawnHand[i] = Array(4); //x,y,angle,speed,handKind
+					handOjb.spawnHand[i][0] = 0; //x
+					handOjb.spawnHand[i][1] = 0; //y
+					handOjb.spawnHand[i][2] = 0; //angle
+					handOjb.spawnHand[i][3] = 0; //speed
+					handOjb.spawnHand[i][4] = 0; //handkind
+				}
+			}
+
+			function setRandom(min, max) {
+				return Math.floor(Math.random() * (max - min + 1)) + min;
+			}
+			function initHandPoint() {
+				//手の出現場所を決定する
+				const wmin = 0;
+				const wmax = canvas.width;
+				const hmin = 0;
+				const hmax = canvas.height;
+				let pointX = setRandom(wmin, wmax);
+				let pointY = setRandom(hmin, hmax);
+
+				//開始位置を画面外へおいやる
+				if (pointX < wmax / 2) {
+					pointX += wmax + me.size;
+				} else {
+					pointX -= wmax + me.size;
+				}
+				if (pointY < hmax / 2) {
+					pointY += hmax + me.size;
+				} else {
+					pointY -= hmax + me.size;
+				}
+				return [pointX, pointY];
+			}
+
+			//すべての手の設定をする。
+			function setEnemyHands(handObj) {
+				//0:x
+				//1:y
+				//2:theta
+				//3:speed
+				//4:hand kind
+				initHandArray(handObj); //一旦リセット
+
+				let theta = 0;
+				for (let i = 0; i < handObj.handNum; i++) {
+					//x,y座標
+					[handObj.spawnHand[i][0], handObj.spawnHand[i][1]] = initHandPoint();
+
+					//角度
+					theta = Math.atan2(
+						handObj.spawnHand[i][1] - canvas.height / 2,
+						handObj.spawnHand[i][0] - canvas.width / 2
+					); //キャンバス中心への角度
+					handObj.spawnHand[i][2] = theta + (Math.random() * Math.PI) / 5; //キャンバス中心への角度に60°分の乱数を追加なるく中心に向かうように。
+
+					//スピード
+					handObj.spawnHand[i][3] = handObj.handSpeed;
+
+					//手の種類(ぐーてょきぱー)
+					handObj.spawnHand[i][4] = make_janken_hand();
+				}
+			}
+
+			function drawRotatedImage(image, x, y, angle) {
+				// コンテキストを保存する
+				ctx.save();
+				// 回転の中心に原点を移動する
+				ctx.translate(x, y);
+				// canvasを回転する
+				ctx.rotate(angle + (Math.PI / 180) * -90);
+				// 画像サイズの半分だけずらして画像を描画する
+				ctx.drawImage(image, -(image.width / 2), -(image.height / 2));
+				// コンテキストを元に戻す
+				ctx.restore();
+			}
+			function drawEnemyHands(handObj, horming) {
+				for (let i = 0; i < handObj.handNum; i++) {
+					//敵の手を動かす
+					if (horming) {
+						//追尾
+						handObj.spawnHand[i][0] -=
+							handObj.spawnHand[i][3] *
+							Math.cos(Math.atan2(handObj.spawnHand[i][1] - me.y, handObj.spawnHand[i][0] - me.x)); //  dx = r cos (theta)
+						handObj.spawnHand[i][1] -=
+							handObj.spawnHand[i][3] *
+							Math.sin(Math.atan2(handObj.spawnHand[i][1] - me.y, handObj.spawnHand[i][0] - me.x)); //  dy = r sin (theta)
+					} else {
+						handObj.spawnHand[i][0] -= handObj.spawnHand[i][3] * Math.cos(handObj.spawnHand[i][2]); //  dx = r cos (theta)
+						handObj.spawnHand[i][1] -= handObj.spawnHand[i][3] * Math.sin(handObj.spawnHand[i][2]); //  dy = r sin (theta)
+					}
+
+					//敵の手を表示
+					if (handObj.spawnHand[i][4] == 1) {
+						drawRotatedImage(
+							handGuImg,
+							handObj.spawnHand[i][0],
+							handObj.spawnHand[i][1],
+							handObj.spawnHand[i][2]
+						);
+					} else if (handObj.spawnHand[i][4] == 2) {
+						drawRotatedImage(
+							handChoImg,
+							handObj.spawnHand[i][0],
+							handObj.spawnHand[i][1],
+							handObj.spawnHand[i][2]
+						);
+					} else if (handObj.spawnHand[i][4] == 3) {
+						drawRotatedImage(
+							handParImg,
+							handObj.spawnHand[i][0],
+							handObj.spawnHand[i][1],
+							handObj.spawnHand[i][2]
+						);
+					} else if (handObj.spawnHand[i][4] == 4) {
+						drawRotatedImage(
+							handToumeiImg,
+							handObj.spawnHand[i][0],
+							handObj.spawnHand[i][1],
+							handObj.spawnHand[i][2]
+						);
+					}
+
+					//デバッグ用:手の位置を表示
+					// ctx.fillText(Math.floor(handObj.spawnHand[i][0]) + ", " + Math.floor(handObj.spawnHand[i][1]), handObj.spawnHand[i][0], handObj.spawnHand[i][1]);
+					// console.log(Math.floor(handObj.spawnHand[i][0]) + ", " + Math.floor(handObj.spawnHand[i][1]), handObj.spawnHand[i][0], handObj.spawnHand[i][1]);
+
+					//デバッグ用:MEとの距離を表示
+					// ctx.fillText(distance(me.x, me.y, handObj.spawnHand[i][0], handObj.spawnHand[i][1]), handObj.spawnHand[i][0], handObj.spawnHand[i][1]);
+				}
+			}
+
+			//手札選択画面
+			function drawSelectHandMenu() {
+				const areaGuX = canvas.width / 4 - me.size / 2;
+				const areaGuY = canvas.height / 2 + 70;
+				const areaChoX = (canvas.width * 2) / 4 - me.size / 2;
+				const areaChoY = canvas.height / 2 + 70;
+				const areaParX = (canvas.width * 3) / 4 - me.size / 2;
+				const areaParY = canvas.height / 2 + 70;
+
+				ctx.clearRect(0, 0, canvas.width, canvas.height);
+				//自分を描画
+				drawMe();
+
+				//自分の手札を決定する。
+				ctx.font = "20px san-serif";
+				ctx.textAlign = "center";
+				ctx.fillStyle = "white";
+				ctx.fillText("自分の手を決定しよう", canvas.width / 2, 80);
+				ctx.fillText("手を選んで「開始」に触ったらスタート！", canvas.width / 2, 105);
+
+				ctx.drawImage(handGuImg, areaGuX, areaGuY);
+				ctx.drawImage(handChoImg, areaChoX, areaChoY);
+				ctx.drawImage(handParImg, areaParX, areaParY);
+
+				if (distance(me.x, me.y, areaGuX + me.size / 2, areaGuY + me.size / 2) < 40) {
+					yourHand = 1;
+				} else if (distance(me.x, me.y, areaChoX + me.size / 2, areaChoY + me.size / 2) < 40) {
+					yourHand = 2;
+				} else if (distance(me.x, me.y, areaParX + me.size / 2, areaParY + me.size / 2) < 40) {
+					yourHand = 3;
+				}
+				if (yourHand != 0) {
+					yourHandSelected = true;
+				}
+
+				//開始合図の円
+				ctx.beginPath();
+				ctx.arc(areaReady[0], areaReady[1], 50, 0, Math.PI * 2, true);
+				ctx.fillStyle = "rgba(210,227,73,0.7)";
+				// ctx.strokeStyle = 'red';
+				ctx.lineWidth = 5;
+				// ctx.stroke();
+				ctx.fill();
+				ctx.closePath();
+
+				ctx.textAlign = "center";
+				ctx.fillStyle = "black";
+				ctx.fillText("開始", areaReady[0], areaReady[1]);
+				if (yourHandSelected == true && distance(me.x, me.y, areaReady[0], areaReady[1]) < 50) {
+					gameReady = true;
+				}
+				if (gameReady) {
+					gameStart();
+
+					for (let i = 0; i < enemyHandsWaveNumMax - 1; i++) {
+						//2wave目からなので1から。
+						setTimeout(() => {
+							if (gameReady) {
+								waveCount++;
+							}
+						}, (i + 1) * waveDelay);
+					}
+				}
+
+				//meの移動
+				keyMove();
+			}
+
+			//自分と相手の距離を計算する
+			function distance(x1, y1, x2, y2) {
+				return Math.floor(Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2)));
+			}
+
+			//キャンバス描画
+			function draw() {
+				//キャンバスをクリア
+				ctx.clearRect(0, 0, canvas.width, canvas.height);
+				//自分を描画
+				drawMe();
+
+				//meの移動:キー入力
+				keyMove();
+
+				for (let j = 0; j < waveCount + 1; j++) {
+					//現在のwave数まで回す
+					if ((stageNumber === 3 && 6 <= j && j <= 9) || (stageNumber === 3 && 15 <= j && j <= 17)) {
+						if (
+							(stageNumber === 3 && 15 <= waveCount && waveCount < 18) ||
+							(stageNumber === 3 && 6 <= waveCount && waveCount < 13)
+						) {
+							drawEnemyHands(stageEnemyHandsArray[j], true); //敵の手を表示
+						} else {
+							drawEnemyHands(stageEnemyHandsArray[j], false); //敵の手を表示
+						}
+					} else {
+						drawEnemyHands(stageEnemyHandsArray[j], false); //敵の手を表示
+					}
+					if (j === enemyHandsWaveNumMax - 1) {
+						//最終ウェーブになると終了判定を行う。
+						gameFinish = true;
+					}
+
+					for (let i = 0; i < stageEnemyHandsArray[j].handNum; i++) {
+						//配列の手の数
+
+						//  当たり判定
+						if (
+							distance(
+								me.x,
+								me.y,
+								stageEnemyHandsArray[j].spawnHand[i][0],
+								stageEnemyHandsArray[j].spawnHand[i][1]
+							) < 40
+						) {
+							if (stageEnemyHandsArray[j].spawnHand[i][4] != 4) {
+								//画像がとうめいじゃなかったら、未判定であれば
+
+								//じゃんけんの判定 してスコアリング
+								if (jankenJudge(yourHand, stageEnemyHandsArray[j].spawnHand[i][4]) === "かち") {
+									scoreWinCount++;
+								} else if (jankenJudge(yourHand, stageEnemyHandsArray[j].spawnHand[i][4]) === "あいこ") {
+									scoreDrawCount++;
+								} else if (jankenJudge(yourHand, stageEnemyHandsArray[j].spawnHand[i][4]) === "まけ") {
+									scoreLoseCount++;
+								}
+
+								displayScore(); //スコアボードに表示
+
+								//あたったら透明にする
+								stageEnemyHandsArray[j].spawnHand[i][4] = 4;
+							}
+						}
+
+						if (j === enemyHandsWaveNumMax - 1) {
+							//最終ウェーブになると終了判定を行う。
+							//すべての手が画面上からいなくなったら。(結構余分に範囲とってある。)
+							if (
+								-canvas.width / 2 < stageEnemyHandsArray[j].spawnHand[i][0] &&
+								stageEnemyHandsArray[j].spawnHand[i][0] < canvas.width / 2 &&
+								-canvas.height / 2 < stageEnemyHandsArray[j].spawnHand[i][1] &&
+								stageEnemyHandsArray[j].spawnHand[i][1] < canvas.height / 2
+							) {
+								gameFinish = false;
+							}
+						}
+					}
+					stagePlayingMessage();
+				}
+
+				if (gameFinish) {
+					stageEndMessage();
+					ctx.font = "bold 40px";
+					ctx.textAlign = "center";
+					ctx.fillStyle = "white";
+					ctx.fillText("終了！", canvas.width / 2, canvas.height / 2);
+					clearInterval(drawingInterval); //drawを停止。
+				}
+			}
+
+			//プレイ中のテキスト表示
+			function stagePlayingMessage() {
+				if (stageNumber === 1) {
+					$("#enemyMessageText").text("ゴリラのほうが人間より知能が高いということを証明してみせましょう。");
+					$("#enemyImage").children("img").attr("src", "./img/gorira_oko.png");
+					if (5 <= resultScore && resultScore < 10) {
+						$("#enemyMessageText").text("なかなかやるようですね。");
+					} else if (resultScore >= 10) {
+						$("#enemyMessageText").text("それ以上は動物虐待になりますよ？");
+					}
+				}
+				if (stageNumber === 2) {
+					$("#enemyMessageText").text("考えがまとまったようですね。");
+					$("#enemyImage").children("img").attr("src", "./img/dora_oko.png");
+					if (resultScore < 0) {
+						$("#enemyMessageText").text("猫の手も借りたい。ですか？");
+					} else if (1 <= resultScore && resultScore < 20) {
+						$("#enemyMessageText").text("私の手は万能のはず・・・？");
+					} else if (20 <= resultScore) {
+						$("#enemyMessageText").text("未来の叡智が・・・");
+					}
+				}
+				if (stageNumber === 3) {
+					$("#enemyMessageText").text("人生そう甘くはありません。");
+					$("#enemyImage").children("img").attr("src", "./img/sen_oko.png");
+					if (resultScore < 0) {
+						$("#enemyMessageText").text("逃げる事はできません。");
+					} else if (1 <= resultScore && resultScore < 5) {
+						$("#enemyMessageText").text("やる気だけは認めましょう。");
+					} else if (5 <= resultScore) {
+						$("#enemyMessageText").text("神を越えようと言うのですか？");
+					}
+				}
+			}
+
+			//ステージ終了時のテキスト表示
+			function stageEndMessage() {
+				//終了時会話フェーズ
+				if (stageNumber === 1) {
+					if (resultScore < 5) {
+						$("#enemyMessageText").text("私の勝ちですね。ゴリラになりたいなら私の研修室へきなさい。");
+						$("#enemyImage").children("img").attr("src", "./img/gorira.png");
+						$("#stage1").text("再挑戦");
+					} else {
+						$("#enemyMessageText").text("ゴリラが人間に劣る・・？。最新の猫型ロボットにあとは任せます・・・");
+						$("#enemyImage").children("img").attr("src", "./img/gorira_lose.png");
+						$(".stage2").css("visibility", "visible");
+						$("#stage1").text("戦う");
+					}
+				}
+				if (stageNumber === 2) {
+					if (resultScore <= 0) {
+						$("#enemyMessageText").text("これが未来の叡智です。あなたも猫型ロボットなりますか？");
+						$("#enemyImage").children("img").attr("src", "./img/dora.png");
+						$("#stage2").text("再挑戦");
+					} else if (0 < resultScore && resultScore <= 20) {
+						$("#enemyMessageText").text("慢心しましたね。これだから古代人は・・・");
+						$("#enemyImage").children("img").attr("src", "./img/dora.png");
+						$("#stage2").text("再挑戦");
+					} else if (20 < resultScore) {
+						$("#enemyMessageText").text("未来の技術が、古代人ごときに負けた・・・・神頼みでもしますか・・・");
+						$("#enemyImage").children("img").attr("src", "./img/dora_oko.png");
+						$(".stage3").css("visibility", "visible");
+					}
+				}
+				if (stageNumber === 3) {
+					if (resultScore <= 0) {
+						$("#enemyMessageText").text(
+							"修行が足りてないようですね。自信を見つめ直して「Why me?」を深堀りしてはいかがでしょうか。"
+						);
+						$("#enemyImage").children("img").attr("src", "./img/sen.png");
+						$("#stage3").text("再挑戦");
+					} else if (0 < resultScore && resultScore < 5) {
+						$("#enemyMessageText").text("いいところまでは来ていますよ。");
+						$("#enemyImage").children("img").attr("src", "./img/sen.png");
+						$("#stage3").text("再挑戦");
+					} else if (5 <= resultScore) {
+						$("#enemyMessageText").text("あなたの勝ちです。これに慢心せず挑み続けなさい。");
+						$("#enemyImage").children("img").attr("src", "./img/sen.png");
+						$(".stage3").css("visibility", "visible");
+						$("#stage2").text("戦う");
+					}
+				}
+			}
+
+			//ボタン押下時ステージ設定処理、描画開始。
+			let stageNumber;
+			$("#stage1").on("click", function () {
+				stageNumber = 1;
+
+				//初期化処理
+				initGame(); //スコア、描画を初期化
+
+				//ステージの設定
+				enemyHandsWaveNumMax = 3;
+				stageEnemyHandsArray = Array(enemyHandsWaveNumMax);
+				for (let i = 0; i < enemyHandsWaveNumMax; i++) {
+					stageEnemyHandsArray[i] = JSON.parse(JSON.stringify(enemyHandsMaster)); //オブジェクトのディープコピーしてくれるらしい。(同じ参照元ではない)
+					setEnemyHands(stageEnemyHandsArray[i]); //敵の手の初期化
+				}
+				waveDelay = 4000; //msec 1000ぐらいが怪しいライン(小さいとバグる)
+
+				//開始前会話フェーズ
+				$("#howToWin").html("合計スコア5以上でクリア！");
+				$("#win").text("win: ");
+				$("#ifwin").text("+1");
+				$("#draw").text("draw: ");
+				$("#ifdraw").text("0");
+				$("#lose").text("lose: ");
+				$("#iflose").text("-1");
+
+				$("#enemyMessageText").html("人間ごときが私に勝負を挑もうとはいい度胸ですね。");
+				$("#enemyImage").children("img").attr("src", "./img/gorira.png");
+
+				//描画開始
+				myHandSelectStart(); //手札選択画面を表示する
+			});
+			$("#stage2").on("click", function () {
+				stageNumber = 2;
+
+				//初期化処理
+				initGame(); //スコア、描画を初期化
+
+				//ステージの設定
+				enemyHandsWaveNumMax = 5;
+				stageEnemyHandsArray = Array(enemyHandsWaveNumMax);
+				for (let j = 0; j < enemyHandsWaveNumMax; j++) {
+					stageEnemyHandsArray[j] = JSON.parse(JSON.stringify(enemyHandsMaster)); //オブジェクトのディープコピーしてくれるらしい。(同じ参照元ではない)
+					stageEnemyHandsArray[j].handNum = 50;
+					setEnemyHands(stageEnemyHandsArray[j]); //敵の手の初期化
+
+					let theta = 0;
+					for (let i = 0; i < stageEnemyHandsArray[j].handNum; i++) {
+						//x,y座標
+						if (j < 3) {
+							//ウェーブの設定
+							// 下から湧く
+							stageEnemyHandsArray[j].spawnHand[i][0] = setRandom(0, canvas.width);
+							stageEnemyHandsArray[j].spawnHand[i][1] = 550;
+						} else {
+							[stageEnemyHandsArray[j].spawnHand[i][0], stageEnemyHandsArray[j].spawnHand[i][1]] =
+								initHandPoint();
+						}
+
+						//角度
+						if (j < 3) {
+							//ウェーブの設定
+							theta = (Math.PI * 90) / 180;
+						} else {
+							theta = Math.atan2(
+								stageEnemyHandsArray[j].spawnHand[i][1] - canvas.height / 2,
+								stageEnemyHandsArray[j].spawnHand[i][0] - canvas.width / 2
+							); //キャンバス中心への角度
+						}
+						stageEnemyHandsArray[j].spawnHand[i][2] = theta;
+
+						//スピード
+						stageEnemyHandsArray[j].spawnHand[i][3] = 3;
+
+						//手の種類(ぐーてょきぱー)
+						stageEnemyHandsArray[j].spawnHand[i][4] = 1;
+					}
+				}
+				waveDelay = 2000; //msec 1000ぐらいが怪しいライン(小さいとバグる)
+
+				//開始前会話フェーズ
+				$("#howToWin").html("合計スコア20以上でクリア！");
+				$("#win").text("win: ");
+				$("#ifwin").text("+1");
+				$("#draw").text("draw: ");
+				$("#ifdraw").text("-5");
+				$("#lose").text("lose: ");
+				$("#iflose").text("-5");
+
+				$("#enemyMessageText").html(
+					"この手は丸いが何でも掴むことができる。<br><u>よく考えて</u>手を選ぶことですね。"
+				);
+				$("#enemyImage").children("img").attr("src", "./img/dora.png");
+
+				//描画開始
+				myHandSelectStart(); //手札選択画面を表示する
+			});
+			$("#stage3").on("click", function () {
+				stageNumber = 3;
+
+				//初期化処理
+				initGame(); //スコア、描画を初期化
+
+				//ステージの設定
+				enemyHandsWaveNumMax = 20;
+				stageEnemyHandsArray = Array(enemyHandsWaveNumMax);
+				for (let j = 0; j < enemyHandsWaveNumMax; j++) {
+					stageEnemyHandsArray[j] = JSON.parse(JSON.stringify(enemyHandsMaster)); //オブジェクトのディープコピーしてくれるらしい。(同じ参照元ではない)
+
+					if (j <= 2) {
+						stageEnemyHandsArray[j].handNum = 20;
+					} else if (j === 6) {
+						//追尾
+						stageEnemyHandsArray[j].handNum = 10;
+					} else if (7 <= j && j < 10) {
+						stageEnemyHandsArray[j].handNum = 5;
+					} else if (10 <= j && j < 13) {
+						stageEnemyHandsArray[j].handNum = 20;
+					} else if (13 <= j && j < 15) {
+						stageEnemyHandsArray[j].handNum = 15;
+					} else if (j === 15) {
+						//追尾
+						stageEnemyHandsArray[j].handNum = 10;
+					} else if (16 <= j && j < 17) {
+						stageEnemyHandsArray[j].handNum = 5;
+					} else {
+						stageEnemyHandsArray[j].handNum = 10;
+					}
+
+					setEnemyHands(stageEnemyHandsArray[j]); //敵の手の初期化
+
+					let theta = 0;
+					for (let i = 0; i < stageEnemyHandsArray[j].handNum; i++) {
+						//x,y座標
+						if (0 <= j && j <= 2) {
+							//ウェーブの設定
+							// 下から湧く
+							stageEnemyHandsArray[j].spawnHand[i][0] = setRandom(0, canvas.width);
+							stageEnemyHandsArray[j].spawnHand[i][1] = 550;
+							stageEnemyHandsArray[j].spawnHand[i][2] = (Math.PI * 90) / 180;
+							stageEnemyHandsArray[j].spawnHand[i][3] = 2;
+							if (j === 0) {
+								stageEnemyHandsArray[j].spawnHand[i][4] = 1;
+							} else if (j === 1) {
+								stageEnemyHandsArray[j].spawnHand[i][4] = 2;
+							} else if (j === 2) {
+								stageEnemyHandsArray[j].spawnHand[i][4] = 3;
+							}
+						} else if (13 <= j && j <= 17) {
+							stageEnemyHandsArray[j].spawnHand[i][3] = 2;
+						} else if (j === 15) {
+							stageEnemyHandsArray[j].spawnHand[i][3] = 1.5;
+						} else {
+							[stageEnemyHandsArray[j].spawnHand[i][0], stageEnemyHandsArray[j].spawnHand[i][1]] =
+								initHandPoint();
+						}
+					}
+				}
+				waveDelay = 2000; //msec 1000ぐらいが怪しいライン(小さいとバグる)
+
+				//開始前会話フェーズ
+				$("#howToWin").html("合計スコア5以上でクリア！");
+				$("#win").text("win: ");
+				$("#ifwin").text("+1");
+				$("#draw").text("draw: ");
+				$("#ifdraw").text("-1");
+				$("#lose").text("lose: ");
+				$("#iflose").text("-1");
+
+				$("#enemyMessageText").html("ここまで来ましたか。。。心してかかられよ。");
+				$("#enemyImage").children("img").attr("src", "./img/sen.png");
+
+				//描画開始
+				myHandSelectStart(); //手札選択画面を表示する
+			});
+
+			$(document).ready(function () {
+				titleImage = new Image();
+				titleImage.src = "img/title.png";
+				titleImage.onload = () => {
+					ctx.drawImage(titleImage, 0, 0);
+				};
+			});
+
+			function myHandSelectStart() {
+				if (!onlyMeInterval) {
+					onlyMeInterval = setInterval(drawSelectHandMenu, 10); //最初は自キャラだけ動かせる
+				} else {
+					clearInterval(onlyMeInterval); //自分だけ描画を止め
+					onlyMeInterval = setInterval(drawSelectHandMenu, 10);
+				}
+			}
+
+			function gameStart() {
+				clearInterval(onlyMeInterval); //自分だけ描画を止め
+
+				if (!drawingInterval) {
+					clearInterval(onlyMeInterval);
+					drawingInterval = setInterval(draw, 10);
+				} else {
+					clearInterval(drawingInterval);
+					clearInterval(onlyMeInterval);
+					drawingInterval = setInterval(draw, 10);
+				}
+			}
+		</script>
+	</body>
 </html>
