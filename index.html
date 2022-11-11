@@ -575,10 +575,10 @@
 							//最終ウェーブになると終了判定を行う。
 							//すべての手が画面上からいなくなったら。(結構余分に範囲とってある。)
 							if (
-								-canvas.width / 2 < stageEnemyHandsArray[j].spawnHand[i][0] &&
-								stageEnemyHandsArray[j].spawnHand[i][0] < canvas.width / 2 &&
-								-canvas.height / 2 < stageEnemyHandsArray[j].spawnHand[i][1] &&
-								stageEnemyHandsArray[j].spawnHand[i][1] < canvas.height / 2
+								-canvas.width / 3 < stageEnemyHandsArray[j].spawnHand[i][0] &&
+								stageEnemyHandsArray[j].spawnHand[i][0] < (canvas.width * 4) / 3 &&
+								-canvas.height / 3 < stageEnemyHandsArray[j].spawnHand[i][1] &&
+								stageEnemyHandsArray[j].spawnHand[i][1] < (canvas.height * 4) / 3
 							) {
 								gameFinish = false;
 							}
