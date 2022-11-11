@@ -140,6 +140,9 @@
 			let scoreLoseCount = 0;
 			let resultScore;
 
+			// -----------ここから関数とか
+
+			// スコアを表示する関数
 			function displayScore() {
 				if (stageNumber === 1) {
 					resultScore = scoreWinCount - scoreLoseCount;
@@ -152,6 +155,7 @@
 				$("#score").text("Score: " + resultScore);
 			}
 
+			// ゲーム開始前の初期化処理
 			function initGame() {
 				//スコアを初期化
 				scoreWinCount = 0;
@@ -180,7 +184,7 @@
 				}
 			}
 
-			//キーを押したときの処理
+			//キーを押したら押したよを知らせる。
 			function keyDownHandler(e) {
 				if (e.key === "Right" || e.key === "ArrowRight") {
 					keyRightPressed = true;
@@ -192,7 +196,7 @@
 					keyDownPressed = true;
 				}
 			}
-
+			// キーを離したら押してないを知らせる。
 			function keyUpHandler(e) {
 				if (e.key === "Right" || e.key === "ArrowRight") {
 					keyRightPressed = false;
@@ -204,7 +208,7 @@
 					keyDownPressed = false;
 				}
 			}
-
+			// 自分の移動
 			function keyMove() {
 				if (keyRightPressed) {
 					me.x += dx;
@@ -238,6 +242,7 @@
 				}
 			}
 
+			// 自キャラを描画する
 			function drawMe() {
 				//自分の位置を表示する。
 				const sizeHand = 25;
@@ -256,6 +261,7 @@
 				// ctx.fillText(me.x + ", " + me.y, me.x, me.y);
 			}
 
+			// ジャンケンの手を生成する。
 			function make_janken_hand() {
 				//じゃんけんの手を生成する。
 				// 1:gu
@@ -266,6 +272,7 @@
 				return Math.floor(Math.random() * (max - min + 1)) + min;
 			}
 
+			//ジャンケンの判定を行う。
 			function jankenJudge(me, enemy) {
 				//じゃんけんの判定をする。
 				// 1:gu
@@ -303,7 +310,7 @@
 				return judge;
 			}
 
-			//手の出現について初期化
+			//敵の手の配列を作る
 			function initHandArray(handOjb) {
 				for (let i = 0; i < maxSpawn; i++) {
 					handOjb.spawnHand[i] = Array(4); //x,y,angle,speed,handKind
@@ -314,10 +321,11 @@
 					handOjb.spawnHand[i][4] = 0; //handkind
 				}
 			}
-
+			//ランダムを作る関数
 			function setRandom(min, max) {
 				return Math.floor(Math.random() * (max - min + 1)) + min;
 			}
+			// 敵の手の初期位置を設定する。
 			function initHandPoint() {
 				//手の出現場所を決定する
 				const wmin = 0;
@@ -341,7 +349,7 @@
 				return [pointX, pointY];
 			}
 
-			//すべての手の設定をする。
+			//敵の手の詳細を設定をする。
 			function setEnemyHands(handObj) {
 				//0:x
 				//1:y
@@ -370,6 +378,7 @@
 				}
 			}
 
+			// 敵の手を回転させるために使う
 			function drawRotatedImage(image, x, y, angle) {
 				// コンテキストを保存する
 				ctx.save();
@@ -382,6 +391,7 @@
 				// コンテキストを元に戻す
 				ctx.restore();
 			}
+			// 敵の手の位置を描画
 			function drawEnemyHands(handObj, horming) {
 				for (let i = 0; i < handObj.handNum; i++) {
 					//敵の手を動かす
@@ -438,6 +448,9 @@
 				}
 			}
 
+			// ------------------------
+			// canvas描画実行処理
+			// ------------------------
 			//手札選択画面
 			function drawSelectHandMenu() {
 				const areaGuX = canvas.width / 4 - me.size / 2;
@@ -511,7 +524,7 @@
 				return Math.floor(Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2)));
 			}
 
-			//キャンバス描画
+			//ゲーム中の描画
 			function draw() {
 				//キャンバスをクリア
 				ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -597,6 +610,9 @@
 				}
 			}
 
+			// ------------------------
+			// 敵のテキスト表示
+			// ------------------------
 			//プレイ中のテキスト表示
 			function stagePlayingMessage() {
 				if (stageNumber === 1) {
@@ -631,7 +647,6 @@
 					}
 				}
 			}
-
 			//ステージ終了時のテキスト表示
 			function stageEndMessage() {
 				//終了時会話フェーズ
@@ -682,6 +697,9 @@
 				}
 			}
 
+			// ------------------------
+			// ステージ選択処理
+			// ------------------------
 			//ボタン押下時ステージ設定処理、描画開始。
 			let stageNumber;
 			$("#stage1").on("click", function () {
@@ -858,6 +876,10 @@
 				myHandSelectStart(); //手札選択画面を表示する
 			});
 
+			// ------------------------
+			// ゲーム実行処理
+			// ------------------------
+			// ゲームタイトルを表示
 			$(document).ready(function () {
 				titleImage = new Image();
 				titleImage.src = "img/title.png";
@@ -866,6 +888,7 @@
 				};
 			});
 
+			// 自分の手の選択画面
 			function myHandSelectStart() {
 				if (!onlyMeInterval) {
 					onlyMeInterval = setInterval(drawSelectHandMenu, 10); //最初は自キャラだけ動かせる
@@ -875,6 +898,7 @@
 				}
 			}
 
+			// ゲーム開始
 			function gameStart() {
 				clearInterval(onlyMeInterval); //自分だけ描画を止め
 
